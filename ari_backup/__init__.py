@@ -405,14 +405,14 @@ class LVMBackup(ARIBackup):
         local_include_dir_list = []
         for include_dir in self.include_dir_list:
             local_include_dir_list.append('{snapshot_mount_point_base_path}{include_dir}'.format(
-                snapshot_mount_point_base_path=snapshot_mount_point_base_path,
+                snapshot_mount_point_base_path=self.snapshot_mount_point_base_path,
                 include_dir=include_dir
             ))
 
         local_exclude_dir_list = []
         for exclude_dir in self.exclude_dir_list:
             local_exclude_dir_list.append('{snapshot_mount_point_base_path}{exclude_dir}'.format(
-                snapshot_mount_point_base_path=snapshot_mount_point_base_path,
+                snapshot_mount_point_base_path=self.snapshot_mount_point_base_path,
                 exclude_dir=exclude_dir
             ))
 
