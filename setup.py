@@ -1,9 +1,13 @@
-from setuptools import setup, find_packages
+#!/usr/bin/env python
+
+from setuptools import setup
+
+print find_packages()
 
 setup(
     name='ari_backup',
     version='0.9.0',
     license='ARI',
-    packages=find_packages(),
+    packages=['ari_backup'],
     author='American Research Institute',
 )
