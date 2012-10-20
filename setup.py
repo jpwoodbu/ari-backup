@@ -2,8 +2,6 @@
 
 from setuptools import setup
 
-print find_packages()
-
 setup(
     name='ari_backup',
     version='0.9.0',
