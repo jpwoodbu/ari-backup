@@ -139,6 +139,17 @@ class ARIBackup(object):
 
         return (stdout, stderr)
 
+    def _run_command_with_retry(self, command, host='localhost', try_number=0):
+        """
+        Calls _run_command up to MAX_RETRIES times, with RETRY_TIMEOUT seconds between tries.
+        """
+        try:
+            self._run_command(command, host)
+        except Exception, e:
+            if try_number > settings.max_retries:
+                raise e
+            self._run_command_with_retry(command, host, try_number + 1)
+
 
     def run_backup(self):
         self.logger.info('started')
@@ -328,7 +339,7 @@ class LVMBackup(ARIBackup):
             if snapshot['created']:
                 lv_path = snapshot['lv_path']
                 # -f makes lvremove not interactive
-                self._run_command('lvremove -f %s' % lv_path, self.source_hostname)
+                self._run_command_with_retries('lvremove -f %s' % lv_path, self.source_hostname)
                 snapshot.update({'created': False})
 
 
@@ -388,10 +399,10 @@ class LVMBackup(ARIBackup):
         for snapshot in local_lv_snapshots:
             mount_path = snapshot['mount_path']
             if snapshot['mounted']:
-                self._run_command('umount %s' % mount_path, self.source_hostname)
+                self._run_command_with_retries('umount %s' % mount_path, self.source_hostname)
                 snapshot.update({'mounted': False})
             if snapshot['mount_point_created']:
-                self._run_command('rmdir %s' % mount_path, self.source_hostname)
+                self._run_command_with_retries('rmdir %s' % mount_path, self.source_hostname)
                 snapshot.update({'mount_point_created': False})
 
 
@@ -422,7 +433,7 @@ class LVMBackup(ARIBackup):
         # We don't support include_file_list and exclude_file_list in this
         # class as it would take extra effort and it's not likely to be used.
 
-		# Have the base class perform an rdiff-backup
+        # Have the base class perform an rdiff-backup
         super(LVMBackup, self)._run_backup(self.snapshot_mount_point_base_path)
 
         self.logger.debug('LVMBackup._run_backup completed')

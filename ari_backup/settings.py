@@ -16,6 +16,8 @@ snapshot_suffix = '-ari_backup'
 rsync_path = '/usr/bin/rsync'
 zfs_snapshot_prefix = 'ari-backup-'
 debug_logging = False
+max_retries = 3
+retry_timeout = 60
 
 # setup logging
 log = Logger('ARIBackup (settings)')
@@ -38,5 +40,7 @@ for k, v in conf.iteritems():
     elif k == 'rsync_options': rsync_options = v
     elif k == 'zfs_snapshot_prefix': zfs_snapshot_prefix = v
     elif k == 'debug_logging': debug_logging = v
+    elif k == 'max_retries': max_retries = v
+    elif k == 'retry_timeout': retry_timeout = v
     else:
         log.warning('{key}:{value} is not a recognized setting'.format(key=k, value=v))
