@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='ari_backup',
-    version='0.9.0',
+    version='0.9.1',
     license='ARI',
     packages=['ari_backup'],
     author='American Research Institute',

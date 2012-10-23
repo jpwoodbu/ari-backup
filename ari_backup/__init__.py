@@ -139,7 +139,7 @@ class ARIBackup(object):
 
         return (stdout, stderr)
 
-    def _run_command_with_retry(self, command, host='localhost', try_number=0):
+    def _run_command_with_retries(self, command, host='localhost', try_number=0):
         """
         Calls _run_command up to MAX_RETRIES times, with RETRY_TIMEOUT seconds between tries.
         """
@@ -148,7 +148,7 @@ class ARIBackup(object):
         except Exception, e:
             if try_number > settings.max_retries:
                 raise e
-            self._run_command_with_retry(command, host, try_number + 1)
+            self._run_command_with_retries(command, host, try_number + 1)
 
 
     def run_backup(self):
