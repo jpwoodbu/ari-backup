@@ -10,8 +10,8 @@ from logger import Logger
 This module provides facilites for centrally managing a large set of
 rdiff-backup backup jobs.  Backup job management is built around common tools
 like cron, run-parts, and xargs.  The base features include:
-* a central configuration file
-* backup jobs for local and remote hosts
+* centralzed configuration
+* support for backing up local and remote hosts
 * configurable job parallelization
 * ability to run arbitrary commands locally or remotely before and/or after
   backup jobs (something especially handy for preparing databases pre-backup)
@@ -254,6 +254,9 @@ class ARIBackup(object):
 
         """ 
         self.logger.debug('_run_backup started')
+
+        if not os.access(settings.rdiff_backup_path, os.X_OK):
+            raise Exception('rdiff-backup does not appear to be installed or is not executable')
 
         # Init our arguments list with the path to rdiff-backup.
         # This will be in the format we'd normally pass to the command-line
