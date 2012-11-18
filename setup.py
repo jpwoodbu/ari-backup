@@ -8,4 +8,7 @@ setup(
     license='ARI',
     packages=['ari_backup'],
     author='American Research Institute',
+    install_requires=[
+        'PyYAML>=3.0',
+    ]
 )
