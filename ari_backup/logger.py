@@ -4,13 +4,12 @@ import sys
 from logging.handlers import SysLogHandler
 
 class Logger(logging.Logger):
-    '''
-    Subclass of the normal logger, to set up desired logging behavior
+    """Subclass of the normal logger, to set up desired logging behavior.
 
     Specifically:
       ERROR and above go to stderr
       INFO and above go to syslog, unless debug is True then DEBUG and above
-    '''
+    """ 
     def __init__(self, name, debug=False):
         logging.Logger.__init__(self, name)
 

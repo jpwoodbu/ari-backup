@@ -3,7 +3,51 @@ from datetime import datetime, timedelta
 from ari_backup import LVMBackup, settings
 
 class ZFSLVMBackup(LVMBackup):
+    """Subclass to add ZFS snapshot management for backup storage.'
+
+    This class replaces rdiff-backup with ZFS+rsync. Data is copied to ZFS
+    datasets using rsync and then ZFS commands are issued to create historical
+    snapshots. The ZFS snapshot lifecycle is also managed by this class. When
+    a backup completes snapshots older than snapshot_expiration_days are
+    destroyed.
+
+    This approach has some benefits over rdiff-backup in that all backup
+    datapoints are easily browseable and replication of the backup data using
+    zfs streams is generally less resource intensive than using something like 
+    rsync to mirror the files created by rdiff-backup.
+
+    One downside is that it's easier to store all file metadata using
+    rdiff-backup. Rsync can only store metadata for files that the destination
+    file system can also store. Furthermore, rsync must have root privilege
+    to store arbitrary file metadata.
+
+    New post-job hooks are added for creating ZFS snapshots and trimming old
+    ones. 
+    
+    This class requires adding rsync_path, rsync_options, and
+    zfs_snapshot_prefix to the settings module.
+    See include/etc/ari-backup/ari-backup.conf.yaml for more on these settings.
+
+    """
     def __init__(self, label, source_hostname, rsync_dst, zfs_hostname, dataset_name, snapshot_expiration_days):
+        """Configure a ZFSLVMBackup object.
+
+        args:
+        label -- a str to label the backup job  (e.g. database-server1)
+        source_hostname -- the name of the host with the source data to backup
+        rsync_dst -- a str to use used as the destination argument for the
+            rsync command line (e.g. backupbox:/backup-store/database-server1)
+        zfs_hostname -- the name of the destination host to use when executing
+            ZFS command lines
+        dataset_name -- the full ZFS path to the dataset holding the backups
+            for this job (e.g. tank/backup-store/database-server1)
+        snapshot_expiration_days -- an int representing the maxmium age of a
+            ZFS snapshot in days
+
+        Pro tip: It's a good practice to reuse the label argument as the last 
+        path component in the rsync_dst and dataset_name argument. 
+
+        """
         # assign instance vars specific to this class
         self.rsync_dst = rsync_dst
         self.zfs_hostname = zfs_hostname
@@ -26,6 +70,7 @@ class ZFSLVMBackup(LVMBackup):
 
 
     def _run_backup(self):
+        """Run rsync backup of LVM snapshot to ZFS dataset."""
         # TODO Throw an exception if we see things in the include or exclude
         # lists since we don't use them in this class?
         self.logger.debug('ZFSLVMBackup._run_backup started')
@@ -51,6 +96,19 @@ class ZFSLVMBackup(LVMBackup):
 
 
     def _create_zfs_snapshot(self, error_case):
+        """Creates a new ZFS snapshot of our destination dataset.
+            
+        args:
+        error_case -- bool indicating if we're being called after a failure
+
+        The name of the snapshot will include the zfs_snapshot_prefix
+        configured in settings and a timestamp. The zfs_snapshot_prefix is
+        used by _remove_zfs_snapshots_older_than() when deciding which
+        snapshots to destroy. The timestamp encoded in a snapshot name is
+        only for end-user convenience. The creation metadata on the ZFS
+        snapshot is what is used to determine a snapshot's age.
+
+        """
         if not error_case:
             self.logger.info('creating ZFS snapshot...')
             snapshot_name = self.snapshot_prefix + datetime.now().strftime(self.snapshot_timestamp_format)
@@ -61,6 +119,18 @@ class ZFSLVMBackup(LVMBackup):
 
 
     def _remove_zfs_snapshots_older_than(self, days, error_case):
+        """Destroy snapshots older than the given numnber of days.
+
+        args:
+        days -- int describing the max age of a snapshot in days
+        error_case -- bool indicating if we're being called after a failure
+
+        Any snapshots in the target dataset with a name that starts with the
+        zfs_snapshot_prefix and a creation date older than days will be
+        destroyed. Depending on the size of the snapshots and the performance
+        of the disk subsystem, this operation could take a while.
+
+        """
         if not error_case:
             self.logger.info('looking for expired ZFS snapshots...')
             expiration = datetime.now() - timedelta(days=days)

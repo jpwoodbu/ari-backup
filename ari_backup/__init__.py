@@ -5,32 +5,44 @@ import shlex
 
 from logger import Logger
 
-'''Wrapper around rdiff-backup
+"""Wrapper around rdiff-backup
 
 This module provides facilites for centrally managing a large set of
 rdiff-backup backup jobs.  Backup job management is built around common tools
 like cron, run-parts, and xargs.  The base features include:
-* central configuration file
+* a central configuration file
 * backup jobs for local and remote hosts
 * configurable job parallelization
-* ability to run arbitrary commands locally or remotely before and after
+* ability to run arbitrary commands locally or remotely before and/or after
   backup jobs (something especially handy for preparing databases pre-backup)
 * logging to syslog
 
 The base features are designed to be extended and we include an extension to
 manage the setup and tear down of LVM snapshots for backup.
 
-'''
+"""
 
 class ARIBackup(object):
-    '''Base class includes core features and basic rdiff-backup functionality
+    """Base class with core features and basic rdiff-backup functionality.
 
     This class can be used if all that is needed is to leverage the basic
     rdiff-backup features.  The pre and post hook functionality as well as
     command execution is also part of this class.
 
-    '''
+    """ 
     def __init__(self, label, source_hostname, remove_older_than_timespec=None):
+        """Configure an ARIBackup object.
+ 
+        args:
+        label -- a str to label the backup job 
+        source_hostname -- the name of the host with the source data to backup
+
+        kwargs:
+        remove_older_than_timespec -- a string representing the maximum age of
+            a backup datapoint (uses the same format as the --remove-older-than
+            argument for rdiff-backup)
+
+        """
         # The name of the backup job (this will be the name of the directory in the backup store
         # that has the data).
         self.label = label
@@ -64,6 +76,15 @@ class ARIBackup(object):
 
 
     def _process_pre_job_hooks(self):
+        """Executes pre-job hook functions.
+
+        The self.pre_job_hook_list is a list of tuples, each with two
+        elements, the first of which is a reference to a hook function, the
+        second is a dictionary of keyword arguments to pass to the hook
+        function. We loop over this list and call each pre-job hook function
+        with its corresponding arguments.
+
+        """ 
         self.logger.info('processing pre-job hooks...')
         for task in self.pre_job_hook_list:
             # Let's do some assignments for readability
@@ -73,6 +94,24 @@ class ARIBackup(object):
 
 
     def _process_post_job_hooks(self, error_case):
+        """Executes post-job hook functions.
+
+        args:
+        error_case -- bool indicating if an error occured in pre-job hooks or
+            in _run_backup()
+
+        This method works almost identically to _process_pre_job_hooks(), with
+        the additional functionality of handling error cases, usually used to
+        perform a cleanup operation (e.g. deleting a snapshot).
+
+        Each post-job function must accept a boolean error_case parameter.
+        However, it is entrirely up to the post-job function to decide what
+        behavior to change when error_case is True. For example, if the
+        post-job function deletes old backups it may want to skip that
+        operation when error_case is True to avoid reducing the number of data
+        points in the backup history.
+        
+        """
         if error_case:
             self.logger.error('processing post-job hooks for error case...')
         else:
@@ -87,15 +126,16 @@ class ARIBackup(object):
 
 
     def _run_command(self, command, host='localhost'):
-        '''Runs an arbitrary command on host.
+        """Runs an arbitrary command on host.
 
-        Given an input string or list, we attempt to execute it on the host via
-        SSH unless host is "localhost".
+        Given a command argument, which can be either a command line string or
+        a list of command line arguments, we attempt to execute it on the host
+        named in the host argument via SSH, or locally if host is "localhost".
 
         Returns a tuple with (stdout, stderr) if the exitcode is zero,
-        otherwise an Exception is raised.
+        otherwise Exception is raised.
 
-        '''
+        """
         # make args a list if it's not already so
         if isinstance(command, basestring):
             args = shlex.split(command)
@@ -140,9 +180,7 @@ class ARIBackup(object):
         return (stdout, stderr)
 
     def _run_command_with_retries(self, command, host='localhost', try_number=0):
-        """
-        Calls _run_command up to MAX_RETRIES times, with RETRY_TIMEOUT seconds between tries.
-        """
+        """Calls _run_command up to MAX_RETRIES times, with RETRY_TIMEOUT seconds between tries."""
         try:
             self._run_command(command, host)
         except Exception, e:
@@ -152,6 +190,18 @@ class ARIBackup(object):
 
 
     def run_backup(self):
+        """Excutes the complete workflow for a single backup job.
+
+        The backup workflow consists of running pre-job hooks in order,
+        calling the _run_backup() method to perform the actual data backup,
+        and then running the post-job hooks, also in order. 
+
+        Under healthy operation, the error_case argument passed to all
+        post-job functions will be set to False. If Exception or
+        KeyboardInterrupt is raised during either the pre-job hook processing or
+        during _run_backup(), then the error_case argument will be set to True.
+
+        """
         self.logger.info('started')
         try:
             error_case = False
@@ -175,16 +225,16 @@ class ARIBackup(object):
 
 
     def _run_backup(self, top_level_src_dir='/'):
-        '''Run rdiff-backup job.
+        """Run rdiff-backup job.
 
         Builds an argument list for a full rdiff-backup command line based on
         the settings in the instance and optionally the top_level_src_dir
         parameter. Said parameter is used to define the context for the backup
         mirror. This is especially handy when backing up mounted spanshots so
-        that the mirror doesn't contain the directory where the snapshot is
-        mounted.
+        that the mirror doesn't also include the directory in which the
+        snapshot is mounted.
 
-        '''
+        """ 
         self.logger.debug('_run_backup started')
 
         # Init our arguments list with the path to rdiff-backup.
@@ -254,12 +304,14 @@ class ARIBackup(object):
 
 
     def _remove_older_than(self, timespec, error_case):
-        '''Trims increments older than timespec
+        """Trims increments older than timespec.
 
-        Post-job hook that uses rdiff-backup's --remove-old-than feature to
-        trim old increments from the backup history
+        args:
 
-        '''
+        Post-job hook that uses rdiff-backup's --remove-older-than feature to
+        trim old increments from the backup history.
+
+        """ 
         if not error_case:
             self.logger.info('remove_older_than %s started' % timespec)
 
@@ -274,7 +326,31 @@ class ARIBackup(object):
 
 
 class LVMBackup(ARIBackup):
+    """Subclass to add LVM snapshot management.
+
+    This class registers pre-job and post-job hooks to create and mount LVM
+    snapshots before and after a backup job. It also overrides the
+    _run_backup() method to fix the include and exlude dirs to use the
+    snapshot mountpoint paths.
+
+    This class requires adding snapshot_mount_root and snapshot_suffix to the
+    settings module. See include/etc/ari-backup/ari-backup.conf.yaml for more
+    on these settings.
+
+    """
     def __init__(self, label, source_hostname, remove_older_than_timespec=None):
+        """Configure an LVMBackup object.
+
+        args:
+        label -- a str to label the backup job 
+        source_hostname -- the name of the host with the source data to backup
+
+        kwargs:
+        remove_older_than_timespec -- a string representing the maximum age of
+            a backup datapoint (uses the same format as the --remove-older-than
+            argument for rdiff-backup)
+
+        """
         super(LVMBackup, self).__init__(label, source_hostname, remove_older_than_timespec)
 
         # This is a list of 2-tuples, where each inner 2-tuple expresses the LV
@@ -298,8 +374,7 @@ class LVMBackup(ARIBackup):
 
 
     def _create_snapshots(self):
-        '''Creates snapshots of all the volumns listed in self.lv_list'''
-
+        """Creates snapshots of all the volumns listed in self.lv_list."""
         self.logger.info('creating LVM snapshots...')
         for volume in self.lv_list:
             try:
@@ -329,11 +404,14 @@ class LVMBackup(ARIBackup):
 
 
     def _delete_snapshots(self, error_case=None):
-        '''Deletes snapshots in self.lv_snapshots
+        """Deletes snapshots in self.lv_snapshots.
+
+        kwargs:
+        error_case -- bool indicating if we're being called after a failure
 
         This method behaves the same in the normal and error cases.
 
-        '''
+        """ 
         self.logger.info('deleting LVM snapshots...')
         for snapshot in self.lv_snapshots:
             if snapshot['created']:
@@ -344,6 +422,16 @@ class LVMBackup(ARIBackup):
 
 
     def _mount_snapshots(self):
+        """Creates mountpoints as well as mounts the snapshots.
+
+        If the mountpoint directory already has a file system mounted then we
+        raise Exception. Metadata is updated whenever a snapshot is
+        successfully mounted so that _umount_snapshots() knows which
+        snapshots to try to umount.
+
+        TODO add mount_options to documentation for backup config files
+
+        """
         self.logger.info('mounting LVM snapshots...')
         for snapshot in self.lv_snapshots:
             lv_path = snapshot['lv_path']
@@ -378,11 +466,14 @@ class LVMBackup(ARIBackup):
 
 
     def _umount_snapshots(self, error_case=None):
-        '''Umounts mounted snapshots in self.lv_snapshots
+        """Umounts mounted snapshots in self.lv_snapshots.
+
+        kwargs:
+        error_case -- bool indicating if we're being called after a failure
 
         This method behaves the same in the normal and error cases.
 
-        '''
+        """ 
         # TODO If the user doesn't put '/' in their include_dir_list, then
         # we'll end up with directories around where the snapshots are mounted
         # that will not get cleaned up.  We should probably add functionality
@@ -407,7 +498,15 @@ class LVMBackup(ARIBackup):
 
 
     def _run_backup(self):
-        '''Run backup of LVM snapshots'''
+        """Run backup of LVM snapshots.
+            
+        This method overrides the base class _run_backup() so that we can
+        modify the include_dir_list and exclude_dir_list to have the
+        snapshot_mount_point_base_path prefixed to their paths. This allows the
+        user to configure what to backup from the perspective of the file
+        system on the snapshot itself.
+
+        """
 
         self.logger.debug('LVMBackup._run_backup started')
 
