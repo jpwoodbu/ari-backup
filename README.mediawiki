@@ -40,11 +40,11 @@ your Linux distribution.
 * python-yaml
 * rdiff-backup
 
-ari-backup requires PyYAML which is not a pure Python library, so you may
-prefer providing that dependency with a system package. In almost all cases,
-you'll need rdiff-backup installed to do anything meaningful with ari-backup.
-It is also recommended that you also install '''ssh''' if you somehow don't
-already have it.
+ari-backup requires [http://pyyaml.org/ PyYAML] which is not a pure Python
+library, so you may prefer providing that dependency with a system package. In
+almost all cases, you'll need rdiff-backup installed to do anything meaningful
+with ari-backup.  It is also recommended that you also install '''ssh''' if
+you somehow don't already have it.
 
 To install the ari_backup package:
 <pre>
