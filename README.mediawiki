@@ -1,3 +1,5 @@
+= ari-backup =
+
 ari-backup is a lightweight wrapper around
 [http://www.nongnu.org/rdiff-backup/ rdiff-backup]. The goal is to provide a
 way to manage many rdiff-backup ''jobs'' consistently and easily with features
