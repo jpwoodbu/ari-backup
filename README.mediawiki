@@ -28,7 +28,7 @@ package, and how to install a Python package. The typical audience for this
 software is the system administrator that wants to backup several systems with
 rdiff-backup.
 
-ari-backup was developed on and written for Linuxr. But there have been reports
+ari-backup was developed on and written for Linux. But there have been reports
 of its use on Windows using [http://www.cygwin.com/ cygwin].
 
 == Getting Started ==
@@ -39,10 +39,10 @@ your Linux distribution.
 * rdiff-backup
 
 ari-backup requires PyYAML which is not a pure Python library, so you may
-providing that dependency with a system package. In almost all cases, you'll
-need rdiff-backup installed to do anything meaningful with ari-backup.  It is
-also recommended that you also install '''ssh''' if you somehow don't already
-have it.
+prefer providing that dependency with a system package. In almost all cases,
+you'll need rdiff-backup installed to do anything meaningful with ari-backup.
+It is also recommended that you also install '''ssh''' if you somehow don't
+already have it.
 
 To install the ari_backup package:
 <pre>
@@ -70,8 +70,8 @@ backup.include_dir_list.append('/music')
 backup.run_backup()
 </pre>
 
-Make ari-backup-demo executable and run it. Make sure the user you're using to
-execute this script has the permission to read the
+Make ''ari-backup-demo'' executable and run it. Make sure the user you're
+using to execute this script has the permission to read the
 ''/etc/ari-backup/ari-backup.conf.yaml'' file, to read the ''/music'' directory
 and has permission to write to the ''/backup-store/my_backup'' directory. If
 all goes well, you should see no output to the console. But take a look at your
@@ -142,10 +142,10 @@ backup job at a time. You can edit the '''JOBS_DIR''' and
 taste.
 
 To put this altogether with an example, let's use the two backup job scripts
-you made from before, ari-backup-demo and ari-backup-remote-demo. Place them
-into the ''/etc/ari-backup/jobs.d'' directory. Make sure it's executable. Now
-copy ''include/cron/ari-backup'' to ''/etc/cron.daily'' (or an equivalent
-directory on your system). You can now wait for cron to run the script in
+you made from before, ''ari-backup-demo'' and ''ari-backup-remote-demo''.
+Place them into the ''/etc/ari-backup/jobs.d'' directory. Now copy
+''include/cron/ari-backup'' to ''/etc/cron.daily'' (or an equivalent directory
+on your system). You can now wait for cron to run the script in
 ''/etc/cron.daily'', or better yet, execute it yourself to test it out.
 
 You can again look at your syslog to see that the backups ran. But you'll
@@ -167,8 +167,8 @@ Be sure that the names of your backup job scripts are compatible with what
 run-parts expects. See the [http://man.cx/run-parts(8) run-parts man page] for
 more on their filename restrictions.
 
-Pro tip: since run-parts will ignore file names with dots, a simple way to
-disable a backup job is to prefix a dot to its filename.
+'''Pro tip:''' since run-parts will ignore file names with dots, a simple way
+to disable a backup job is to prefix a dot to its filename.
 
 == Extensions ==
 
