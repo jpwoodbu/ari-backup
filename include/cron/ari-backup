@@ -1,7 +1,7 @@
 #!/bin/bash
 
+JOBS_DIR="/etc/ari-backup/jobs.d"
 CONCURRENT_JOBS=1
-
 LOCKDIR=/var/lock/ari-backup.cron
 
 if mkdir "$LOCKDIR" 2>/dev/null
@@ -10,7 +10,7 @@ then
 # We use run-parts to get the list of jobs to ensure that our scripts are LSB
 # compliant. We use xargs to run backups concurrently. We use -I with bash's
 # exec just to avoid eating up twice the space in the process table.
-    time (run-parts --list /etc/ari-backup/jobs.d | xargs -n 1 -P "$CONCURRENT_JOBS" -I xx /bin/bash -c 'exec xx')
+    time (run-parts --list "$JOBS_DIR" | xargs -n 1 -P "$CONCURRENT_JOBS" -I xx /bin/bash -c 'exec xx')
 else
     echo "ari-backup is already running. exiting..."
     exit 1
