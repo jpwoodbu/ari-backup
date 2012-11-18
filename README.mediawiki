@@ -5,8 +5,7 @@ like:
 * centralzed configuration
 * support for backing up local and remote hosts
 * configurable job parallelization
-* ability to run arbitrary commands locally or remotely before and/or after
-backup jobs (something especially handy for preparing databases pre-backup)
+* ability to run arbitrary commands locally or remotely before and/or after backup jobs (something especially handy for preparing databases pre-backup)
 * logging to syslog
 
 The framework can be extended to support more complex backup configurations.
@@ -55,10 +54,10 @@ backup.run_backup()
 </pre>
 
 Make ari-backup-demo.py executable and run it. Make sure the user you're
-using to execute this script has the permissions to read the
-''/etc/ari-backup/ari-backup.conf.yaml'' file, the ''/music'' directory and
-has permission to write to the ''/backup-store/my_backup'' directory. If all
-goes well, you should see no output to the console. But take a look at your
+using to execute this script has the permission to read the
+''/etc/ari-backup/ari-backup.conf.yaml'' file, to read the ''/music'' directory
+and has permission to write to the ''/backup-store/my_backup'' directory. If
+all goes well, you should see no output to the console. But take a look at your
 syslog and you might see lines like this:
 <pre>
 Nov 17 23:21:56 morbo ARIBackup (my_backup) [INFO] started
@@ -84,12 +83,12 @@ user that will run ari-backup and the user that we'll use to connect to the
 remote host. For this demo, we're going to use the user '''backups'''.
 
 The remote system requires very little setup. Once you've got your SSH key
-installed the only other step is install rdiff-backup. ari-backup does not
+installed, the only other step is to install rdiff-backup. ari-backup does not
 need to be installed on the remote system. Isn't that great!
 
-Make sure that the user that's running ari-backup has the remote host's host
-key in its known_hosts file. The best way to ensure that it is, is to test
-your public key authentication works by logging in to the remote system
+Make sure that the user that's running your backup script has the remote
+host's host key in its known_hosts file. The best way to ensure that it is, is
+to test your public key authentication works by logging in to the remote system
 manally.
 
 We'll need to add the remote_user setting to our
@@ -114,7 +113,11 @@ Make ''ari-backup-remote-demo.py'' executable and run it. Again, no output to
 the console means everthing worked. Check the syslog and your
 ''/backup-store/kif_backup'' directory to see the results. Once you've got
 your ssh keys setup, the only thing different about remote backups is the
-value you put in the source_hostname argument.
+value you put in the source_hostname parameter.
+
+== Using ari-backup with cron ==
+
+STUB
 
 == Extensions ==
 
@@ -124,20 +127,22 @@ TODO write up examples of how to use the LVMBackup and ZFSLVMBackup extensions.
 
 ari-backup gets its name from the
 [http://americanri.com American Research Institute] where it was orgiinally
-written in bash. As [http://www.nongnu.org/rdiff-backup/ rdiff-backup] was
+written in bash. As [http://www.nongnu.org/rdiff-backup/ rdiff-backup] was our
 software of choice to backup our Linux systems, we needed some sort of
 scripting around running rdiff-backup on a schedule. We could write a script
 that performed all our backups and just place it in ''/etc/cron.daily'', but
-that didn't seem scalable and was especially monolitch since we were backing
+that didn't seem scalable and was especially monolithic since we were backing
 up about 50 machines.
 
-We liked the idea of seperate backup scripts for each backup job, in our case,
-broken out by host, but we didn't want to overcrowd the ''/etc/cron.daily''
-directory. So we put all our backup scripts in their own directory and put a
-single file in ''/etc/cron.daily'' that called our backups using
-[http://man.cx/run-parts(8) run-parts]. We later cooked in the
+We liked the idea of seperate backup scripts for each backup job. In our case,
+each job was backing up a host. But we didn't want to overcrowd the
+''/etc/cron.daily'' directory. So we put all our backup scripts in their own
+directory and put a single file in ''/etc/cron.daily'' that called our backups
+using [http://man.cx/run-parts(8) run-parts]. We later cooked in the
 [http://en.wikipedia.org/wiki/Xargs xargs] part that made it easy to run
 backup jobs concurrently.
 
 When we started to add the LVM snapshot features we decided that porting it to
 Python was going to make working on this project much easier.
+
+In 2011, ARI graciously open-sourced this software.
