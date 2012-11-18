@@ -20,17 +20,34 @@ parallel, [http://man.cx/run-parts(8) run-parts] is used to execute individual
 backup jobs, and [http://en.wikipedia.org/wiki/Secure_shell ssh] is used for
 authentication and secure data transport.
 
+== Audience ==
+
+This README and the ari-backup documentation expect that the reader has a
+basic understanding of Linux, file system semantics, how to install a system
+package, and how to install a Python package. The typical audience for this
+software is the system administrator that wants to backup several systems with
+rdiff-backup.
+
+ari-backup was developed on and written for Linuxr. But there have been reports
+of its use on Windows using [http://www.cygwin.com/ cygwin].
+
 == Getting Started ==
 
-On Ubuntu 12.04 and Debian 6, you can install the ari-backup dependecies with
-the following packages:
+Before you install ari-backup, consider installing the following packages from
+your Linux distribution.
 * python-yaml
 * rdiff-backup
 
-It is recommended that you also install '''ssh''' if you somehow don't already
+ari-backup requires PyYAML which is not a pure Python library, so you may
+providing that dependency with a system package. In almost all cases, you'll
+need rdiff-backup installed to do anything meaningful with ari-backup.  It is
+also recommended that you also install '''ssh''' if you somehow don't already
 have it.
 
-'''TODO''' Talk about how the ari_backup Python package can be installed.
+To install the ari_backup package:
+<pre>
+pip install -e git+https://github.com/jpwoodbu/ari-backup.git#egg=ari_backup
+</pre>
 
 Before you can execute a backup job there are a few files and directories that
 need to be setup. At this time, the configuration file for ari-backup is
@@ -43,7 +60,7 @@ Now create the ''/backup-store'' directory.
 
 Our demo will use the most basic example of a backup job. Our job will backup
 our ''/music'' directory to ''/backup-store/my_backup''. Put the following into
-a file named ''ari-backup-demo.py'':
+a file named ''ari-backup-demo'':
 <pre>
 #!/usr/bin/env python
 from ari_backup import ARIBackup
@@ -53,8 +70,8 @@ backup.include_dir_list.append('/music')
 backup.run_backup()
 </pre>
 
-Make ari-backup-demo.py executable and run it. Make sure the user you're
-using to execute this script has the permission to read the
+Make ari-backup-demo executable and run it. Make sure the user you're using to
+execute this script has the permission to read the
 ''/etc/ari-backup/ari-backup.conf.yaml'' file, to read the ''/music'' directory
 and has permission to write to the ''/backup-store/my_backup'' directory. If
 all goes well, you should see no output to the console. But take a look at your
@@ -99,7 +116,7 @@ remote_user: backups
 </pre>
 
 Let's assume that your remote host is named kif. Make a new backup job file
-named ''ari-backup-remote-demo.py'' with this content:
+named ''ari-backup-remote-demo'' with this content:
 <pre>
 #!/usr/bin/env python
 from ari_backup import ARIBackup
@@ -109,15 +126,49 @@ backup.include_dir_list.append('/music')
 backup.run_backup()
 </pre>
 
-Make ''ari-backup-remote-demo.py'' executable and run it. Again, no output to
-the console means everthing worked. Check the syslog and your
+Make ''ari-backup-remote-demo'' executable and run it. Again, no output to the
+console means everthing worked. Check the syslog and your
 ''/backup-store/kif_backup'' directory to see the results. Once you've got
 your ssh keys setup, the only thing different about remote backups is the
 value you put in the source_hostname parameter.
 
 == Using ari-backup with cron ==
 
-STUB
+See ''include/cron/ari-backup'' for an example script you can use with cron.
+By default, this script will look for backup jobs in
+''/etc/ari-backup/jobs.d''. And by default, this script will only execute one
+backup job at a time. You can edit the '''JOBS_DIR''' and
+'''CONCURRENT_JOBS''' variables in the script to tweak those settings to
+taste.
+
+To put this altogether with an example, let's use the two backup job scripts
+you made from before, ari-backup-demo and ari-backup-remote-demo. Place them
+into the ''/etc/ari-backup/jobs.d'' directory. Make sure it's executable. Now
+copy ''include/cron/ari-backup'' to ''/etc/cron.daily'' (or an equivalent
+directory on your system). You can now wait for cron to run the script in
+''/etc/cron.daily'', or better yet, execute it yourself to test it out.
+
+You can again look at your syslog to see that the backups ran. But you'll
+also notice that when running our cron script you will actually get some
+console output as it reports how long the entire selection of jobs took to
+run. You may see something like
+this:
+<pre>
+real    3m44.318s
+user    0m45.595s
+sys     0m8.253s
+</pre>
+
+If you have cron setup to email you when there's output like this, then you'll
+have a handy (or annoying) email reporting whether your backups ran
+successfully each time.
+
+Be sure that the names of your backup job scripts are compatible with what
+run-parts expects. See the [http://man.cx/run-parts(8) run-parts man page] for
+more on their filename restrictions.
+
+Pro tip: since run-parts will ignore file names with dots, a simple way to
+disable a backup job is to prefix a dot to its filename.
 
 == Extensions ==
 
@@ -126,7 +177,7 @@ TODO write up examples of how to use the LVMBackup and ZFSLVMBackup extensions.
 == History and Namesake ==
 
 ari-backup gets its name from the
-[http://americanri.com American Research Institute] where it was orgiinally
+[http://americanri.com American Research Institute] where it was originally
 written in bash. As [http://www.nongnu.org/rdiff-backup/ rdiff-backup] was our
 software of choice to backup our Linux systems, we needed some sort of
 scripting around running rdiff-backup on a schedule. We could write a script
