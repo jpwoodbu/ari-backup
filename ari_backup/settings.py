@@ -9,6 +9,7 @@ from logger import Logger
 
 # let's set some sane defaults
 rdiff_backup_path = '/usr/bin/rdiff-backup'
+# TODO consider not setting the remote_user to root by default
 remote_user = 'root'
 ssh_path = '/usr/bin/ssh'
 ssh_compression = False
