@@ -128,9 +128,15 @@ class ARIBackup(object):
     def _run_command(self, command, host='localhost'):
         """Runs an arbitrary command on host.
 
-        Given a command argument, which can be either a command line string or
-        a list of command line arguments, we attempt to execute it on the host
-        named in the host argument via SSH, or locally if host is "localhost".
+        args:
+        command -- str or list representing a command line
+
+        kwargs:
+        host -- hostname for the host on which the command will be executed
+
+        Given the command parameter, which can be either a command line string
+        or a list of command line arguments, we attempt to execute it on the host
+        named in the host parameter via SSH, or locally if host is "localhost".
 
         Returns a tuple with (stdout, stderr) if the exitcode is zero,
         otherwise Exception is raised.
@@ -196,10 +202,10 @@ class ARIBackup(object):
         calling the _run_backup() method to perform the actual data backup,
         and then running the post-job hooks, also in order. 
 
-        Under healthy operation, the error_case argument passed to all
+        Under healthy operation, the error_case parameter passed to all
         post-job functions will be set to False. If Exception or
         KeyboardInterrupt is raised during either the pre-job hook processing or
-        during _run_backup(), then the error_case argument will be set to True.
+        during _run_backup(), then the error_case parameter will be set to True.
 
         """
         self.logger.info('started')
@@ -227,12 +233,24 @@ class ARIBackup(object):
     def _run_backup(self, top_level_src_dir='/'):
         """Run rdiff-backup job.
 
+        kwargs:
+        top_level_src_dir -- a path on the source host that acts as a mask
+            for writing paths to the backup destination
+
         Builds an argument list for a full rdiff-backup command line based on
         the settings in the instance and optionally the top_level_src_dir
         parameter. Said parameter is used to define the context for the backup
         mirror. This is especially handy when backing up mounted spanshots so
         that the mirror doesn't also include the directory in which the
         snapshot is mounted.
+
+        For example, if our source data is /tmp/database-server1_snapshot and
+        our destination directory is /backup-store/database-server1, then
+        setting the top_level_src_dir to '/' would build your backup mirror at
+        /backup-store/database-server1/tmp/database-server1_snapshot. If you
+        instead set the top_level_src_dir to '/tmp/database-server1_snapshot'
+        then your backup mirror would be built at
+        /backup-store/database-server1, which is probably what you want.
 
         """ 
         self.logger.debug('_run_backup started')
@@ -307,9 +325,14 @@ class ARIBackup(object):
         """Trims increments older than timespec.
 
         args:
+        timespec -- a string representing the maximum age of
+            a backup datapoint (uses the same format as the --remove-older-than
+            argument for rdiff-backup)
+        error_case -- bool indicating if we're being called after a failure
 
         Post-job hook that uses rdiff-backup's --remove-older-than feature to
-        trim old increments from the backup history.
+        trim old increments from the backup history. This method does nothing
+        when error_case is True.
 
         """ 
         if not error_case:
@@ -330,7 +353,7 @@ class LVMBackup(ARIBackup):
 
     This class registers pre-job and post-job hooks to create and mount LVM
     snapshots before and after a backup job. It also overrides the
-    _run_backup() method to fix the include and exlude dirs to use the
+    _run_backup() method to fix the include and exclude dirs to use the
     snapshot mountpoint paths.
 
     This class requires adding snapshot_mount_root and snapshot_suffix to the
@@ -500,7 +523,7 @@ class LVMBackup(ARIBackup):
     def _run_backup(self):
         """Run backup of LVM snapshots.
             
-        This method overrides the base class _run_backup() so that we can
+        This method overrides the base class's _run_backup() so that we can
         modify the include_dir_list and exclude_dir_list to have the
         snapshot_mount_point_base_path prefixed to their paths. This allows the
         user to configure what to backup from the perspective of the file

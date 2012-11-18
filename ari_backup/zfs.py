@@ -8,18 +8,22 @@ class ZFSLVMBackup(LVMBackup):
     This class replaces rdiff-backup with ZFS+rsync. Data is copied to ZFS
     datasets using rsync and then ZFS commands are issued to create historical
     snapshots. The ZFS snapshot lifecycle is also managed by this class. When
-    a backup completes snapshots older than snapshot_expiration_days are
+    a backup completes, snapshots older than snapshot_expiration_days are
     destroyed.
 
     This approach has some benefits over rdiff-backup in that all backup
     datapoints are easily browseable and replication of the backup data using
-    zfs streams is generally less resource intensive than using something like 
+    ZFS streams is generally less resource intensive than using something like 
     rsync to mirror the files created by rdiff-backup.
 
     One downside is that it's easier to store all file metadata using
     rdiff-backup. Rsync can only store metadata for files that the destination
-    file system can also store. Furthermore, rsync must have root privilege
-    to store arbitrary file metadata.
+    file system can also store. For example, if extended file system
+    attributes are used on the source file system, but aren't available on the
+    destination, rdiff-backup will still record those attributes in its own
+    files. If faced with that same scenario, rsync would lose those attributes.
+    Furthermore, rsync must have root privilege to write arbitrary file
+    metadata.
 
     New post-job hooks are added for creating ZFS snapshots and trimming old
     ones. 
@@ -35,17 +39,18 @@ class ZFSLVMBackup(LVMBackup):
         args:
         label -- a str to label the backup job  (e.g. database-server1)
         source_hostname -- the name of the host with the source data to backup
-        rsync_dst -- a str to use used as the destination argument for the
-            rsync command line (e.g. backupbox:/backup-store/database-server1)
-        zfs_hostname -- the name of the destination host to use when executing
-            ZFS command lines
-        dataset_name -- the full ZFS path to the dataset holding the backups
-            for this job (e.g. tank/backup-store/database-server1)
+        rsync_dst -- a str to use as the destination argument for the rsync
+            command line (e.g. backupbox:/backup-store/database-server1)
+        zfs_hostname -- the name of the backup destination host where we will 
+            be managing the ZFS snapshots
+        dataset_name -- the full ZFS path (not file system path) to the dataset
+            holding the backups for this job
+            (e.g. tank/backup-store/database-server1)
         snapshot_expiration_days -- an int representing the maxmium age of a
             ZFS snapshot in days
 
         Pro tip: It's a good practice to reuse the label argument as the last 
-        path component in the rsync_dst and dataset_name argument. 
+        path component in the rsync_dst and dataset_name arguments. 
 
         """
         # assign instance vars specific to this class
@@ -126,7 +131,7 @@ class ZFSLVMBackup(LVMBackup):
         error_case -- bool indicating if we're being called after a failure
 
         Any snapshots in the target dataset with a name that starts with the
-        zfs_snapshot_prefix and a creation date older than days will be
+        zfs_snapshot_prefix setting and a creation date older than days will be
         destroyed. Depending on the size of the snapshots and the performance
         of the disk subsystem, this operation could take a while.
 
