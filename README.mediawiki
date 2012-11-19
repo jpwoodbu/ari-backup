@@ -15,7 +15,7 @@ We currently include extensions that add support for backing up from LVM
 snapshots and backing up to ZFS datasets.
 
 This application is lightweight thanks mostly to leveraging common system
-tools to provide most the facility necessary to run a backup system.
+tools to provide most of the facility necessary to run a backup system.
 [http://en.wikipedia.org/wiki/Cron cron] is used to schedule the backup jobs,
 [http://en.wikipedia.org/wiki/Xargs xargs] is used to optionally run jobs in
 parallel, [http://man.cx/run-parts(8) run-parts] is used to execute individual
