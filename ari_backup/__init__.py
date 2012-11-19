@@ -102,7 +102,7 @@ class ARIBackup(object):
         the additional functionality of handling error cases, usually used to
         perform a cleanup operation (e.g. deleting a snapshot).
 
-        Each post-job function must accept a boolean error_case parameter.
+        Each post-job function must accept a boolean error_case argument.
         However, it is entrirely up to the post-job function to decide what
         behavior to change when error_case is True. For example, if the
         post-job function deletes old backups it may want to skip that
@@ -131,9 +131,9 @@ class ARIBackup(object):
         kwargs:
         host -- hostname for the host on which the command will be executed
 
-        Given the command parameter, which can be either a command line string
+        Given the command argument, which can be either a command line string
         or a list of command line arguments, we attempt to execute it on the host
-        named in the host parameter via SSH, or locally if host is "localhost".
+        named in the host argument via SSH, or locally if host is "localhost".
 
         Returns a tuple with (stdout, stderr) if the exitcode is zero,
         otherwise Exception is raised.
@@ -202,10 +202,10 @@ class ARIBackup(object):
         calling the _run_backup() method to perform the actual data backup,
         and then running the post-job hooks, also in order. 
 
-        Under healthy operation, the error_case parameter passed to all
+        Under healthy operation, the error_case argument passed to all
         post-job functions will be set to False. If Exception or
         KeyboardInterrupt is raised during either the pre-job hook processing or
-        during _run_backup(), then the error_case parameter will be set to True.
+        during _run_backup(), then the error_case argument will be set to True.
 
         """
         self.logger.info('started')
@@ -238,7 +238,7 @@ class ARIBackup(object):
 
         Builds an argument list for a full rdiff-backup command line based on
         the settings in the instance and optionally the top_level_src_dir
-        parameter. Said parameter is used to define the context for the backup
+        argument. Said argument is used to define the context for the backup
         mirror. This is especially handy when backing up mounted spanshots so
         that the mirror doesn't also include the directory in which the
         snapshot is mounted.
@@ -279,7 +279,7 @@ class ARIBackup(object):
         if not settings.ssh_compression:
             arg_list.append('--ssh-no-compression')
 
-        # Populate self.argument list
+        # Add exclude and includes to our arguments
         for exclude_dir in self.exclude_dir_list:
             arg_list.append('--exclude')
             arg_list.append(exclude_dir)
