@@ -69,7 +69,7 @@ class ARIBackup(object):
         self.pre_job_hook_list = []
         self.post_job_hook_list = []
 
-        if remove_older_than_timespec != None:
+        if remove_older_than_timespec is not None:
             self.post_job_hook_list.append((
                 self._remove_older_than,
                 {'timespec': remove_older_than_timespec}))
@@ -215,16 +215,16 @@ class ARIBackup(object):
             self.logger.info('data backup started...')
             self._run_backup()
             self.logger.info('data backup complete')
-        except Exception, e:
-            error_case = True
-            self.logger.error((str(e)))
-            self.logger.info("let's try to clean up...")
         except KeyboardInterrupt:
             error_case = True
             # using error level here so that these messages will
             # print to the console
             self.logger.error('backup job cancelled by user')
             self.logger.error("let's try to clean up...")
+        except Exception, e:
+            error_case = True
+            self.logger.error(str(e))
+            self.logger.info("let's try to clean up...")
         finally:
             self._process_post_job_hooks(error_case)
             self.logger.info('stopped')
