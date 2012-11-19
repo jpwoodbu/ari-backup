@@ -73,7 +73,6 @@ class ZFSLVMBackup(LVMBackup):
             (self._remove_zfs_snapshots_older_than, {'days': snapshot_expiration_days})
         )
 
-
     def _run_backup(self):
         """Run rsync backup of LVM snapshot to ZFS dataset."""
         # TODO Throw an exception if we see things in the include or exclude
@@ -99,7 +98,6 @@ class ZFSLVMBackup(LVMBackup):
         self._run_command(command, self.source_hostname)
         self.logger.debug('ZFSLVMBackup._run_backup completed')
 
-
     def _create_zfs_snapshot(self, error_case):
         """Creates a new ZFS snapshot of our destination dataset.
             
@@ -119,9 +117,7 @@ class ZFSLVMBackup(LVMBackup):
             snapshot_name = self.snapshot_prefix + datetime.now().strftime(self.snapshot_timestamp_format)
             command = 'zfs snapshot {dataset_name}@{snapshot_name}'.format(
                 dataset_name=self.dataset_name, snapshot_name=snapshot_name)
-
             self._run_command(command, self.zfs_hostname)
-
 
     def _remove_zfs_snapshots_older_than(self, days, error_case):
         """Destroy snapshots older than the given numnber of days.

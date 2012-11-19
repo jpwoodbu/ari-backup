@@ -74,7 +74,6 @@ class ARIBackup(object):
                 self._remove_older_than,
                 {'timespec': remove_older_than_timespec}))
 
-
     def _process_pre_job_hooks(self):
         """Executes pre-job hook functions.
 
@@ -91,7 +90,6 @@ class ARIBackup(object):
             hook = task[0]
             kwargs = task[1]
             hook(**kwargs)
-
 
     def _process_post_job_hooks(self, error_case):
         """Executes post-job hook functions.
@@ -121,9 +119,8 @@ class ARIBackup(object):
             # Let's do some assignments for readability
             hook = task[0]
             kwargs = task[1]
-            kwargs.update({'error_case': error_case})
+            kwargs['error_case'] = error_case
             hook(**kwargs)
-
 
     def _run_command(self, command, host='localhost'):
         """Runs an arbitrary command on host.
@@ -148,7 +145,7 @@ class ARIBackup(object):
         elif isinstance(command, list):
             args = command
         else:
-            raise Exception('_run_command: command arg must be str or list')
+            raise TypeError('_run_command: command arg must be str or list')
 
         # add SSH arguments if this is a remote command
         if host != 'localhost':
@@ -159,13 +156,17 @@ class ARIBackup(object):
             self.logger.debug('_run_command %r' % args)
             p = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             # We really want to block until our subprocess exists or
-            # KeyboardInterrupt. If we don't, clean up tasks can likely fail.
+            # KeyboardInterrupt. If we don't, clean-up tasks will likely fail.
             try:
                 stdout, stderr = p.communicate()
             except KeyboardInterrupt:
+                # Let's try to stop our subprocess if the user issues a
+                # KeyboardInterrupt.
                 # TODO terminate() doesn't block, so we'll need to poll
                 p.terminate()
-                raise KeyboardInterrupt
+                # We should re-raise this exception so our caller knows the
+                # user wants to stop the workflow.
+                raise
 
             if stdout:
                 self.logger.debug(stdout)
@@ -193,7 +194,6 @@ class ARIBackup(object):
             if try_number > settings.max_retries:
                 raise e
             self._run_command_with_retries(command, host, try_number + 1)
-
 
     def run_backup(self):
         """Excutes the complete workflow for a single backup job.
@@ -224,11 +224,10 @@ class ARIBackup(object):
         except Exception, e:
             error_case = True
             self.logger.error(str(e))
-            self.logger.info("let's try to clean up...")
+            self.logger.error("let's try to clean up...")
         finally:
             self._process_post_job_hooks(error_case)
             self.logger.info('stopped')
-
 
     def _run_backup(self, top_level_src_dir='/'):
         """Run rdiff-backup job.
@@ -255,6 +254,8 @@ class ARIBackup(object):
         """ 
         self.logger.debug('_run_backup started')
 
+        if settings.backup_store_path is None:
+            raise Exception('backup_store_path setting is not set')
         if not os.access(settings.rdiff_backup_path, os.X_OK):
             raise Exception('rdiff-backup does not appear to be installed or is not executable')
 
@@ -296,8 +297,7 @@ class ARIBackup(object):
             arg_list.append(include_file)
 
         # Exclude everything else
-        arg_list.append('--exclude')
-        arg_list.append('**')
+        arg_list += ['--exclude', '**']
 
         # Add a source argument
         if self.source_hostname == 'localhost':
@@ -323,14 +323,13 @@ class ARIBackup(object):
         self._run_command(arg_list)
         self.logger.debug('_run_backup completed')
 
-
     def _remove_older_than(self, timespec, error_case):
         """Trims increments older than timespec.
 
         args:
         timespec -- a string representing the maximum age of
             a backup datapoint (uses the same format as the --remove-older-than
-            argument for rdiff-backup)
+            argument for rdiff-backup [e.g. 30D, 10W, 6M])
         error_case -- bool indicating if we're being called after a failure
 
         Post-job hook that uses rdiff-backup's --remove-older-than feature to
@@ -341,11 +340,13 @@ class ARIBackup(object):
         if not error_case:
             self.logger.info('remove_older_than %s started' % timespec)
 
-            arg_list = [settings.rdiff_backup_path]
-            arg_list.append('--force')
-            arg_list.append('--remove-older-than')
-            arg_list.append(timespec)
-            arg_list.append('%s/%s' % (settings.backup_store_path, self.label))
+            arg_list = [
+                settings.rdiff_backup_path,
+                '--force',
+                '--remove-older-than',
+                timespec,
+                '%s/%s' % (settings.backup_store_path, self.label),
+            ]
 
             self._run_command(arg_list)
             self.logger.info('remove_older_than %s completed' % timespec)
@@ -398,7 +399,6 @@ class LVMBackup(ARIBackup):
         self.post_job_hook_list.append((self._umount_snapshots, {}))
         self.post_job_hook_list.append((self._delete_snapshots, {}))
 
-
     def _create_snapshots(self):
         """Creates snapshots of all the volumns listed in self.lv_list."""
         self.logger.info('creating LVM snapshots...')
@@ -428,7 +428,6 @@ class LVMBackup(ARIBackup):
                 'mounted': False,
             })
 
-
     def _delete_snapshots(self, error_case=None):
         """Deletes snapshots in self.lv_snapshots.
 
@@ -444,8 +443,7 @@ class LVMBackup(ARIBackup):
                 lv_path = snapshot['lv_path']
                 # -f makes lvremove not interactive
                 self._run_command_with_retries('lvremove -f %s' % lv_path, self.source_hostname)
-                snapshot.update({'created': False})
-
+                snapshot['created'] = False
 
     def _mount_snapshots(self):
         """Creates mountpoints as well as mounts the snapshots.
@@ -467,7 +465,7 @@ class LVMBackup(ARIBackup):
 
             # mkdir the mount point
             self._run_command('mkdir -p %s' % mount_path, self.source_hostname)
-            snapshot.update({'mount_point_created': True})
+            snapshot['mount_point_created'] = True
 
             # If where we want to mount our LV is already a mount point then
             # let's back out.
@@ -488,8 +486,7 @@ class LVMBackup(ARIBackup):
                 )
 
             self._run_command(command, self.source_hostname)
-            snapshot.update({'mounted': True})
-
+            snapshot['mounted'] = True
 
     def _umount_snapshots(self, error_case=None):
         """Umounts mounted snapshots in self.lv_snapshots.
@@ -517,11 +514,10 @@ class LVMBackup(ARIBackup):
             mount_path = snapshot['mount_path']
             if snapshot['mounted']:
                 self._run_command_with_retries('umount %s' % mount_path, self.source_hostname)
-                snapshot.update({'mounted': False})
+                snapshot['mounted'] = False
             if snapshot['mount_point_created']:
                 self._run_command_with_retries('rmdir %s' % mount_path, self.source_hostname)
-                snapshot.update({'mount_point_created': False})
-
+                snapshot['mount_point_created'] = False
 
     def _run_backup(self):
         """Run backup of LVM snapshots.

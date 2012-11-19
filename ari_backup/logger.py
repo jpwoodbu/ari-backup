@@ -9,8 +9,17 @@ class Logger(logging.Logger):
     Specifically:
       ERROR and above go to stderr
       INFO and above go to syslog, unless debug is True then DEBUG and above
+
     """ 
     def __init__(self, name, debug=False):
+        """
+        args:
+        name -- name passed to logging.Logger
+
+        kwargs:
+        debug -- bool to enable debug logging
+
+        """
         logging.Logger.__init__(self, name)
 
         # Set the name, much like logging.getLogger(name) would
@@ -30,4 +39,3 @@ class Logger(logging.Logger):
             syslog_handler.setLevel(logging.INFO)
         syslog_handler.setFormatter(formatter)
         self.addHandler(syslog_handler)
-
