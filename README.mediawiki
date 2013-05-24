@@ -174,7 +174,7 @@ to disable a backup job is to prefix a dot to its filename.
 
 == Extensions ==
 
-TODO write up examples of how to use the ZFSLVMBackup extension.
+=== LVMBackup ===
 
 Let's add LVM into the mix so that we can achieve crash-consistent backups.
 This is done using the LVMBackup extension.  We'll need to add the
@@ -216,6 +216,10 @@ backup.include_dir_list.append('/etc')
 
 backup.run_backup()
 </pre>
+
+=== ZFSLVMBackup ===
+
+TODO write up examples of how to use the ZFSLVMBackup extension.
 
 == History and Namesake ==
 
