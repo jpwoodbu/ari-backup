@@ -46,7 +46,7 @@ almost all cases, you'll need rdiff-backup installed to do anything meaningful
 with ari-backup.  It is also recommended that you also install '''ssh''' if
 you somehow don't already have it.
 
-To install the ari_backup package:
+To install the ari_backup package, run this as '''root''':
 <pre>
 pip install git+git://github.com/jpwoodbu/ari-backup.git
 </pre>
