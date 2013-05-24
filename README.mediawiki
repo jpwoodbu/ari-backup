@@ -174,7 +174,48 @@ to disable a backup job is to prefix a dot to its filename.
 
 == Extensions ==
 
-TODO write up examples of how to use the LVMBackup and ZFSLVMBackup extensions.
+TODO write up examples of how to use the ZFSLVMBackup extension.
+
+Let's add LVM into the mix so that we can achieve crash-consistent backups.
+This is done using the LVMBackup extension.  We'll need to add the
+snapshot_mount_root and snapshot_suffix settings to our existing
+''/etc/ari-backup/ari-backup.conf.yaml'' file:
+<pre>
+snapshot_mount_root: /tmp
+snapshot_suffix: -ari-backup
+</pre>
+
+snapshot_mount_root defines where the temporary snapshots are mounted during
+the backup (snapshots are automatically removed after the backup is completed).
+snapshot_suffix determines the suffix of the name of the snapshot.  This is
+useful when debugging so that it's clear where the snapshot came from.
+
+Let's assume that your remote host is named user-laptop.  You want rdiff-backup
+to remove increments older than one month, so you set
+remove_older_than_timespec='1M'.  You specify the LVM volumes and their
+mountpoints on the remote system (you may add more than one LVM volume by
+adding multiple backup.lv_list.append settings).  Finally, specify the
+directories to be backed up with backup.include_dir_list.append.  Make a new
+backup job file named ''ari-backup-remote-lvm-demo'' with this content:
+<pre>
+#!/usr/bin/env python
+
+from ari_backup import LVMBackup
+
+label = 'mybackup'
+
+backup = LVMBackup(
+    label=label,
+    source_hostname='user-laptop',
+    remove_older_than_timespec='1M'
+)
+
+backup.lv_list.append(('vg0/root', '/'))
+
+backup.include_dir_list.append('/etc')
+
+backup.run_backup()
+</pre>
 
 == History and Namesake ==
 
