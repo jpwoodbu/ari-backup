@@ -62,7 +62,7 @@ Now create the ''/backup-store'' directory.
 
 Our demo will use the most basic example of a backup job. Our job will backup
 our ''/music'' directory to ''/backup-store/my_backup''. Put the following into
-a file named ''ari-backup-demo'':
+a file named ''ari-backup-local-demo'':
 <pre>
 #!/usr/bin/env python
 from ari_backup import ARIBackup
@@ -72,7 +72,7 @@ backup.include_dir_list.append('/music')
 backup.run_backup()
 </pre>
 
-Make ''ari-backup-demo'' executable and run it. Make sure the user you're
+Make ''ari-backup-local-demo'' executable and run it. Make sure the user you're
 using to execute this script has the permission to read the
 ''/etc/ari-backup/ari-backup.conf.yaml'' file, to read the ''/music'' directory
 and has permission to write to the ''/backup-store/my_backup'' directory. If
@@ -144,7 +144,7 @@ backup job at a time. You can edit the '''JOBS_DIR''' and
 taste.
 
 To put this altogether with an example, let's use the two backup job scripts
-you made from before, ''ari-backup-demo'' and ''ari-backup-remote-demo''.
+you made from before, ''ari-backup-local-demo'' and ''ari-backup-remote-demo''.
 Place them into the ''/etc/ari-backup/jobs.d'' directory. Now copy
 ''include/cron/ari-backup'' to ''/etc/cron.daily'' (or an equivalent directory
 on your system). You can now wait for cron to run the script in
