@@ -21,6 +21,7 @@ ssh_compression = conf.get('ssh_compression', False)
 snapshot_suffix = conf.get('snapshot_suffix', '-ari_backup')
 snapshot_mount_root = conf.get('snapshot_mount_root', '/tmp')
 rsync_path = conf.get('rsync_path', '/usr/bin/rsync')
+rsync_options = conf.get('rsync_options', '--archive -A --numeric-ids --delete --inplace')
 zfs_snapshot_prefix = conf.get('zfs_snapshot_prefix', 'ari-backup-')
 debug_logging = conf.get('debug_logging', False)
 # TODO review these setting name; What is being retried? Are we sure that's a
