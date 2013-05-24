@@ -46,7 +46,7 @@ almost all cases, you'll need rdiff-backup installed to do anything meaningful
 with ari-backup.  It is also recommended that you also install '''ssh''' if
 you somehow don't already have it.
 
-To install the ari_backup package:
+To install the ari_backup package, run this as '''root''':
 <pre>
 pip install git+git://github.com/jpwoodbu/ari-backup.git
 </pre>
@@ -62,7 +62,7 @@ Now create the ''/backup-store'' directory.
 
 Our demo will use the most basic example of a backup job. Our job will backup
 our ''/music'' directory to ''/backup-store/my_backup''. Put the following into
-a file named ''ari-backup-demo'':
+a file named ''ari-backup-local-demo'':
 <pre>
 #!/usr/bin/env python
 from ari_backup import ARIBackup
@@ -72,7 +72,7 @@ backup.include_dir_list.append('/music')
 backup.run_backup()
 </pre>
 
-Make ''ari-backup-demo'' executable and run it. Make sure the user you're
+Make ''ari-backup-local-demo'' executable and run it. Make sure the user you're
 using to execute this script has the permission to read the
 ''/etc/ari-backup/ari-backup.conf.yaml'' file, to read the ''/music'' directory
 and has permission to write to the ''/backup-store/my_backup'' directory. If
@@ -144,7 +144,7 @@ backup job at a time. You can edit the '''JOBS_DIR''' and
 taste.
 
 To put this altogether with an example, let's use the two backup job scripts
-you made from before, ''ari-backup-demo'' and ''ari-backup-remote-demo''.
+you made from before, ''ari-backup-local-demo'' and ''ari-backup-remote-demo''.
 Place them into the ''/etc/ari-backup/jobs.d'' directory. Now copy
 ''include/cron/ari-backup'' to ''/etc/cron.daily'' (or an equivalent directory
 on your system). You can now wait for cron to run the script in
@@ -174,7 +174,52 @@ to disable a backup job is to prefix a dot to its filename.
 
 == Extensions ==
 
-TODO write up examples of how to use the LVMBackup and ZFSLVMBackup extensions.
+=== LVMBackup ===
+
+Let's add LVM into the mix so that we can achieve crash-consistent backups.
+This is done using the LVMBackup extension.  We'll need to add the
+snapshot_mount_root and snapshot_suffix settings to our existing
+''/etc/ari-backup/ari-backup.conf.yaml'' file:
+<pre>
+snapshot_mount_root: /tmp
+snapshot_suffix: -ari-backup
+</pre>
+
+snapshot_mount_root defines where the temporary snapshots are mounted during
+the backup (snapshots are automatically removed after the backup is completed).
+snapshot_suffix determines the suffix of the name of the snapshot.  This is
+useful when debugging so that it's clear where the snapshot came from.
+
+Let's assume that your remote host is named user-laptop.  You want rdiff-backup
+to remove increments older than one month, so you set
+remove_older_than_timespec='1M'.  You specify the LVM volumes and their
+mountpoints on the remote system (you may add more than one LVM volume by
+adding multiple backup.lv_list.append settings).  Finally, specify the
+directories to be backed up with backup.include_dir_list.append.  Make a new
+backup job file named ''ari-backup-remote-lvm-demo'' with this content:
+<pre>
+#!/usr/bin/env python
+
+from ari_backup import LVMBackup
+
+label = 'mybackup'
+
+backup = LVMBackup(
+    label=label,
+    source_hostname='user-laptop',
+    remove_older_than_timespec='1M'
+)
+
+backup.lv_list.append(('vg0/root', '/'))
+
+backup.include_dir_list.append('/etc')
+
+backup.run_backup()
+</pre>
+
+=== ZFSLVMBackup ===
+
+TODO write up examples of how to use the ZFSLVMBackup extension.
 
 == History and Namesake ==
 
