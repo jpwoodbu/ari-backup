@@ -2,16 +2,12 @@
 
 from ari_backup import LVMBackup
 
-label = 'mybackup'
-
 backup = LVMBackup(
-    label=label,
+    label='mybackup',
     source_hostname='user-laptop',
     remove_older_than_timespec='1M'
 )
 
 backup.lv_list.append(('vg0/root', '/'))
-
 backup.include_dir_list.append('/etc')
-
 backup.run_backup()
