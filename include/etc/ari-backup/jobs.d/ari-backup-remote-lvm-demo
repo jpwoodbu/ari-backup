@@ -4,7 +4,7 @@ from ari_backup import LVMBackup
 
 backup = LVMBackup(
     label='mybackup',
-    source_hostname='user-laptop',
+    source_hostname='db-server',
     remove_older_than_timespec='1M'
 )
 
