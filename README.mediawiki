@@ -46,7 +46,7 @@ almost all cases, you'll need rdiff-backup installed to do anything meaningful
 with ari-backup.  It is also recommended that you also install '''ssh''' if
 you somehow don't already have it.
 
-To install the ari_backup package, run this as '''root''':
+To install the ari_backup package to your system, run this as '''root''':
 <pre>
 pip install git+git://github.com/jpwoodbu/ari-backup.git
 </pre>
@@ -190,11 +190,11 @@ the backup (snapshots are automatically removed after the backup is completed).
 snapshot_suffix determines the suffix of the name of the snapshot.  This is
 useful when debugging so that it's clear where the snapshot came from.
 
-Let's assume that your remote host is named user-laptop.  You want rdiff-backup
+Let's assume that your remote host is named db-server.  You want rdiff-backup
 to remove increments older than one month, so you set
 remove_older_than_timespec='1M'.  You specify the LVM volumes and their
 mountpoints on the remote system (you may add more than one LVM volume by
-adding multiple backup.lv_list.append settings).  Finally, specify the
+adding multiple backup.lv_list.append statements).  Finally, specify the
 directories to be backed up with backup.include_dir_list.append.  Make a new
 backup job file named ''ari-backup-remote-lvm-demo'' with this content:
 <pre>
@@ -202,18 +202,14 @@ backup job file named ''ari-backup-remote-lvm-demo'' with this content:
 
 from ari_backup import LVMBackup
 
-label = 'mybackup'
-
 backup = LVMBackup(
-    label=label,
-    source_hostname='user-laptop',
+    label='mybackup',
+    source_hostname='db-server',
     remove_older_than_timespec='1M'
 )
 
 backup.lv_list.append(('vg0/root', '/'))
-
 backup.include_dir_list.append('/etc')
-
 backup.run_backup()
 </pre>
 
