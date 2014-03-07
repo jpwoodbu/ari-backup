@@ -108,7 +108,7 @@ need to be installed on the remote system. Isn't that great!
 Make sure that the user that's running your backup script has the remote
 host's host key in its known_hosts file. The best way to ensure that it is, is
 to test your public key authentication works by logging in to the remote system
-manally.
+manually.
 
 We'll need to add the remote_user setting to our
 ''/etc/ari-backup/ari-backup.conf.yaml'' file. It should now look like:
