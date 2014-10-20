@@ -4,4 +4,5 @@ from zfs import ZFSLVMBackup
 
 
 # Continue to provide old names for backward compatiblity.
+ARIBackup = RdiffBackup
 LVMBackup = RdiffLVMBackup
