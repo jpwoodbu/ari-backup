@@ -6,7 +6,7 @@ import settings
 import workflow
 
 
-class ZFSLVMBackup(workflow.BaseWorkflow, lvm.LVMSourceMixIn):
+class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
   """Workflow for backing up a logical volume to a ZFS dataset.
     
   Data is copied from and LVM snapshot to a ZFS dataset using rsync and then
