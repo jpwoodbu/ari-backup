@@ -558,3 +558,24 @@ class LVMBackup(ARIBackup):
         super(LVMBackup, self)._run_backup(self.snapshot_mount_point_base_path)
 
         self.logger.debug('LVMBackup._run_backup completed')
+
+class CustomTopLevelSrcDir(ARIBackup):
+    """Subclass for special backup scenarios.
+
+    This class will allow you to set a custom top_level_src_dir
+    attribute per backup object.  This is useful when backing up various sources
+    with mountpoints that you'd prefer not show up at the rdiff-backup destination.
+
+    """
+    def __init__(self, top_level_src_dir, *args, **kwargs):
+        super(CustomTopLevelSrcDir, self).__init__(*args, **kwargs)
+        self.top_level_src_dir = top_level_src_dir
+
+    def _run_backup(self):
+        """Run backup for special cases.
+
+        Similar to LVMBackup._run_backup, but instead allows the user to
+        customize the mountpoint path that will be excluded at the mirror.
+        """
+        self.logger.debug('CustomTopLevelSrcDir._run_backup started')
+        super(CustomTopLevelSrcDir, self)._run_backup(self.top_level_src_dir)
