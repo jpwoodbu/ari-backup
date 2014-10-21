@@ -10,11 +10,25 @@ xargs. The base features include:
 * logging to syslog
 
 """
+from __future__ import with_statement
 import subprocess
 import shlex
+import sys
+import yaml
+
+import gflags
 
 from logger import Logger
-import settings
+
+
+FLAGS = gflags.FLAGS
+gflags.DEFINE_boolean('debug_logging', False, 'enable debug logging')
+gflags.DEFINE_boolean('dry_run', False, 'log actions but do not execute them')
+gflags.DEFINE_integer('max_retries', 3, 'number of times to retry a command')
+gflags.DEFINE_string('remote_user', 'root', 'username used for SSH sessions')
+gflags.DEFINE_string('settings_path', '/etc/ari-backup/ari-backup.conf.yaml',
+                     'path to settings file')
+gflags.DEFINE_string('ssh_path', '/usr/bin/ssh', 'path to ssh binary')
 
 
 class BaseWorkflow(object):
@@ -25,19 +39,43 @@ class BaseWorkflow(object):
 
     args:
     label -- a str to label the backup job 
+
     """
-    # setup logging
+    # Initialize FLAGS. Normally this is done by the main() function but in the 
+    # model where the config files are excutable it seems the best place to do
+    # this is here in the BaseWorkflow constructor.
+    FLAGS(sys.argv)
+    # Override default flag values from user provided settings file.
+    self._load_settings()
+    # Setup logging.
     # TODO(jpwoodbu) Considering renaming the heading to this logging
     # statement.
     self.logger = Logger('ARIBackup ({label})'.format(label=label),
-                         settings.debug_logging)
-
+                         FLAGS.debug_logging)
     self.label = label
-    self.dry_run = settings.dry_run
-    # initialize hook lists
+
+    # Assign flags to instance vars so they might be easily overridden in
+    # workflow configs.
+    self.dry_run = FLAGS.dry_run
+    self.max_tries = FLAGS.max_retries
+    self.remote_user = FLAGS.remote_user
+    self.ssh_path = FLAGS.ssh_path
+
+    # Initialize hook lists.
     self.pre_job_hook_list = []
     self.post_job_hook_list = []
       
+  def _load_settings(self):
+    """Loads user-defined settings."""
+    try:
+      with open(FLAGS.settings_path) as settings_file:
+        settings = yaml.load(settings_file)
+    except IOError:
+      self.logger.warning('Unable to load {} file. Continuing with default '
+                          'settings.'.format(FLAGS.settings_path))
+    for setting, value in settings.iteritems():
+      setattr(FLAGS, setting, value)
+
   def _process_pre_job_hooks(self):
     """Executes pre-job hook functions.
 
@@ -116,7 +154,7 @@ class BaseWorkflow(object):
     # add SSH arguments if this is a remote command
     if host != 'localhost':
       ssh_args = shlex.split('{ssh} {user}@%{host}'.format(
-          ssh=settings.ssh_path, user=self.remote_user, host=host))
+          ssh=self.ssh_path, user=self.remote_user, host=host))
       args = ssh_args + args
 
     self.logger.debug('_run_command %r' % args)
@@ -160,18 +198,12 @@ class BaseWorkflow(object):
 
     return (stdout, stderr)
 
-  def _run_command_with_retries(self, command, host='localhost',
-                                try_number=0):
-    """Runs a command with fixed number of retries.
-
-    With max_retries defined in settings, calls _run_command up to
-    max_retries.
-
-    """
+  def _run_command_with_retries(self, command, host='localhost', try_number=0):
+    """Runs a command retrying on failure up to self.max_retries."""
     try:
       self._run_command(command, host)
     except Exception, e:
-      if try_number > settings.max_retries:
+      if try_number > self.max_retries:
         raise e
       self._run_command_with_retries(command, host, try_number + 1)
 

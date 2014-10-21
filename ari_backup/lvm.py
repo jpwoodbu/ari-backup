@@ -1,9 +1,17 @@
 """LVM based backup workflows and MixIn classes."""
 import os
 
+import gflags
+
 import rdiff_backup_wrapper
-import settings
 import workflow
+
+
+FLAGS = gflags.FLAGS
+gflags.DEFINE_string('snapshot_mount_root', '/tmp',
+    'root path for creating temporary directories for mounting LVM snapshots')
+gflags.DEFINE_string('snapshot_suffix', '-ari_backup',
+                     'suffix for LVM snapshots')
 
 
 class LVMSourceMixIn(object):
@@ -12,13 +20,15 @@ class LVMSourceMixIn(object):
   This class registers pre-job and post-job hooks to create and mount LVM
   snapshots before and after a backup job.
 
-  This class requires adding snapshot_mount_root and snapshot_suffix to the
-  settings module. See include/etc/ari-backup/ari-backup.conf.yaml for more
-  on these settings.
-
   """
   def __init__(self, *args, **kwargs):
     super(LVMSourceMixIn, self).__init__(*args, **kwargs)
+
+    # Assign flags to instance vars so they might be easily overridden in
+    # workflow configs.
+    self.snapshot_mount_root = FLAGS.snapshot_mount_root
+    self.snapshot_suffix = FLAGS.snapshot_suffix
+
     # This is a list of 2-tuples, where each inner 2-tuple expresses the LV to
     # back up, the mount point for that LV any mount options necessary. For
     # example: [('hostname/root, '/', 'noatime'),]
@@ -30,7 +40,7 @@ class LVMSourceMixIn(object):
     self.lv_snapshots = []
     # Mount the snapshots in a directory named for this job's label.
     self.snapshot_mount_point_base_path = os.path.join(
-        settings.snapshot_mount_root, self.label)
+        self.snapshot_mount_root, self.label)
 
     # Setup pre and post job hooks to manage snapshot work flow.
     self.pre_job_hook_list.append((self._create_snapshots, {}))
@@ -49,7 +59,7 @@ class LVMSourceMixIn(object):
         mount_options = None
 
       vg_name, lv_name = lv_path.split('/')
-      new_lv_name = lv_name + settings.snapshot_suffix
+      new_lv_name = lv_name + self.snapshot_suffix
       mount_path = ('{snapshot_mount_point_base_path}'
                     '{src_mount_path}'.format(
           snapshot_mount_point_base_path=self.snapshot_mount_point_base_path,

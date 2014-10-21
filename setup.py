@@ -10,6 +10,7 @@ setup(
     author='ari-backup team',
     install_requires=[
         'PyYAML>=3.0',
+        'python-gflags>=1.5.1',
     ],
     classifiers=(
         'Intended Audience :: System Administrators',

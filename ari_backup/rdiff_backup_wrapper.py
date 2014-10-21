@@ -1,8 +1,32 @@
 """rdiff-backup based backup workflows."""
 import os
 
-import settings
+import gflags
+
 import workflow
+
+
+FLAGS = gflags.FLAGS
+gflags.DEFINE_string('backup_store_path', None,
+                     'base path to which to write backups')
+gflags.DEFINE_string('rdiff_backup_path', '/usr/bin/rdiff-backup',
+                     'path to rdiff-backup binary')
+gflags.DEFINE_boolean('ssh_compression', False,
+                      'compress rdiff-backup SSH streams')
+# The top_level_src_dir flag is used to define the context for the backup
+# mirror. This is especially handy when backing up mounted spanshots so that
+# the mirror doesn't also include the directory in which the snapshot is
+# mounted.
+#
+# For example, if our source data is /tmp/database-server1_snapshot and our
+# destination directory is /backup-store/database-server1, then setting the
+# top_level_src_dir to '/' would build your backup mirror at
+# /backup-store/database-server1/tmp/database-server1_snapshot. If you instead
+# set the top_level_src_dir to '/tmp/database-server1_snapshot' then your
+# backup mirror would be built at /backup-store/database-server1, which is
+# probably what you want.
+gflags.DEFINE_string('top_level_src_dir', '/',
+    'top level source directory from which to begin the backup mirror')
 
 
 class RdiffBackup(workflow.BaseWorkflow):
@@ -25,9 +49,12 @@ class RdiffBackup(workflow.BaseWorkflow):
     super(RdiffBackup, self).__init__(label)
     self.source_hostname = source_hostname
 
-    # Bring in end-user overridable settings.
-    self.remote_user = settings.remote_user
-    self.top_level_src_dir = settings.top_level_src_dir
+    # Assign flags to instance vars so they might be easily overridden in
+    # workflow configs.
+    self.backup_store_path = FLAGS.backup_store_path
+    self.rdiff_backup_path = FLAGS.rdiff_backup_path
+    self.ssh_compression = FLAGS.ssh_compression
+    self.top_level_src_dir = FLAGS.top_level_src_dir
 
     # Include nothing by default.
     self.include_dir_list = []
@@ -46,14 +73,19 @@ class RdiffBackup(workflow.BaseWorkflow):
     """Run rdiff-backup job.
 
     Builds an argument list for a full rdiff-backup command line based on the
-    settings in the instance
+    configuration in the RdiffBackup instance.
 
     """ 
     self.logger.debug('_run_custom_workflow started')
 
-    if settings.backup_store_path is None:
+    # TODO(jpwoodbu) Move this sanity check into a pre-hook so we can avoid
+    # doing other pre-hook work if we're missing a critical setting. Also of
+    # note, it's too bad we can't use the gflags.MarkFlagAsRequired() function
+    # for this. But since we're not actually passing in flags using sys.argv
+    # most of the time, our hands are a bit tied.
+    if self.backup_store_path is None:
       raise Exception('backup_store_path setting is not set')
-    if not os.access(settings.rdiff_backup_path, os.X_OK):
+    if not os.access(self.rdiff_backup_path, os.X_OK):
       raise Exception('rdiff-backup does not appear to be installed or '
                       'is not executable')
 
@@ -61,7 +93,7 @@ class RdiffBackup(workflow.BaseWorkflow):
     # This will be in the format we'd normally pass to the command-line
     # e.g. [ '--include', '/dir/to/include', '--exclude',
     # '/dir/to/exclude']
-    arg_list = [settings.rdiff_backup_path]
+    arg_list = [self.rdiff_backup_path]
 
     # setup some default rdiff-backup options
     # TODO provide a way to override these
@@ -75,7 +107,7 @@ class RdiffBackup(workflow.BaseWorkflow):
     # This conditional reads strangely, but that's because rdiff-backup not
     # only defaults to having SSH compression enabled, it also doesn't have an
     # option to explicitly enable it -- only one to disable it.
-    if not settings.ssh_compression:
+    if not self.ssh_compression:
       arg_list.append('--ssh-no-compression')
 
     # Add exclude and includes to our arguments
@@ -111,7 +143,7 @@ class RdiffBackup(workflow.BaseWorkflow):
     # Add a destination argument
     arg_list.append(
         '{backup_store_path}/{label}'.format(
-            backup_store_path=settings.backup_store_path, label=self.label))
+            backup_store_path=self.backup_store_path, label=self.label))
 
     # Rdiff-backup GO!
     self._run_command(arg_list)
@@ -135,11 +167,11 @@ class RdiffBackup(workflow.BaseWorkflow):
       self.logger.info('remove_older_than %s started' % timespec)
 
       arg_list = [
-          settings.rdiff_backup_path,
+          self.rdiff_backup_path,
           '--force',
           '--remove-older-than',
           timespec,
-          '{}/{}'.format(settings.backup_store_path, self.label),
+          '{}/{}'.format(self.backup_store_path, self.label),
       ]
 
       self._run_command(arg_list)

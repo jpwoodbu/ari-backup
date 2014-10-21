@@ -1,9 +1,21 @@
 """ZFS based backup workflows."""
 from datetime import datetime, timedelta
 
+import gflags
+
 import lvm
-import settings
 import workflow
+
+
+FLAGS = gflags.FLAGS
+gflags.DEFINE_string('rsync_options',
+                     '--archive --acls --numeric-ids --delete --inplace',
+                     'rsync command options')
+gflags.DEFINE_string('rsync_path', '/usr/bin/rsync', 'path to rsync binary')
+gflags.DEFINE_string('zfs_snapshot_prefix', 'ari-backup-',
+                     'prefix for historical ZFS snapshots')
+gflags.DEFINE_string('zfs_snapshot_timestamp_format', '%Y-%m-%d--%H%M',
+    'strftime() formatted timestamp used when naming new ZFS snapshots')
 
 
 class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
@@ -31,10 +43,6 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
   New post-job hooks are added for creating ZFS snapshots and trimming old
   ones. 
   
-  This class requires adding rsync_path, rsync_options, and
-  zfs_snapshot_prefix to the settings module.
-  See include/etc/ari-backup/ari-backup.conf.yaml for more on these settings.
-
   """
   def __init__(self, label, source_hostname, rsync_dst, zfs_hostname,
                dataset_name, snapshot_expiration_days):
@@ -65,12 +73,12 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     self.zfs_hostname = zfs_hostname
     self.dataset_name = dataset_name
 
-    # Bring in some overridable settings.
-    self.rsync_options = settings.rsync_options
-    self.snapshot_prefix = settings.zfs_snapshot_prefix
-
-    # The timestamp format we're going to use when naming our snapshots.
-    self.snapshot_timestamp_format = '%Y-%m-%d--%H%M'
+    # Assign flags to instance vars so they might be easily overridden in
+    # workflow configs.
+    self.rsync_options = FLAGS.rsync_options
+    self.rsync_path = FLAGS.rsync_path
+    self.zfs_snapshot_prefix = FLAGS.zfs_snapshot_prefix
+    self.zfs_snapshot_timestamp_format = FLAGS.zfs_snapshot_timestamp_format
 
     self.post_job_hook_list.append((self._create_zfs_snapshot, {}))
     self.post_job_hook_list.append(
@@ -93,7 +101,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     rsync_src = self.snapshot_mount_point_base_path + '/'
 
     command = '{rsync_path} {rsync_options} {src} {dst}'.format(
-        rsync_path=settings.rsync_path,
+        rsync_path=self.rsync_path,
         rsync_options=rsync_options,
         src=rsync_src,
         dst=self.rsync_dst)
@@ -107,17 +115,17 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     args:
     error_case -- bool indicating if we're being called after a failure
 
-    The name of the snapshot will include the zfs_snapshot_prefix
-    configured in settings and a timestamp. The zfs_snapshot_prefix is
-    used by _remove_zfs_snapshots_older_than() when deciding which
-    snapshots to destroy. The timestamp encoded in a snapshot name is
-    only for end-user convenience. The creation metadata on the ZFS
-    snapshot is what is used to determine a snapshot's age.
+    The name of the snapshot will include the zfs_snapshot_prefix provided by
+    FLAGS and a timestamp. The zfs_snapshot_prefix is used by
+    _remove_zfs_snapshots_older_than() when deciding which snapshots to
+    destroy. The timestamp encoded in a snapshot name is only for end-user
+    convenience. The creation metadata on the ZFS snapshot is what is used to
+    determine a snapshot's age.
 
     """
     if not error_case:
       self.logger.info('creating ZFS snapshot...')
-      timestamp = datetime.now().strftime(self.snapshot_timestamp_format)
+      timestamp = datetime.now().strftime(self.zfs_snapshot_timestamp_format)
       snapshot_name = self.snapshot_prefix + timestamp
       command = 'zfs snapshot {dataset_name}@{snapshot_name}'.format(
           dataset_name=self.dataset_name, snapshot_name=snapshot_name)
