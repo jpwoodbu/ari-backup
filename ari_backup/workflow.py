@@ -31,6 +31,18 @@ gflags.DEFINE_string('settings_path', '/etc/ari-backup/ari-backup.conf.yaml',
 gflags.DEFINE_string('ssh_path', '/usr/bin/ssh', 'path to ssh binary')
 
 
+class WorkflowError(Exception):
+  """Base error class for this module."""
+
+
+class CommandNotFound(WorkflowError):
+  """Raised when the given binary cannot be found."""
+
+
+class NonZeroExitCode(WorkflowError):
+  """Raises when subprocess returns a non-zero exitcode."""
+
+
 class BaseWorkflow(object):
   """Base class with core workflow features."""
 
@@ -62,8 +74,12 @@ class BaseWorkflow(object):
     self.ssh_path = FLAGS.ssh_path
 
     # Initialize hook lists.
-    self.pre_job_hook_list = []
-    self.post_job_hook_list = []
+    self._pre_job_hooks = list()
+    self._post_job_hooks = list()
+
+    # Maintain backward compatibility with old hooks interface.
+    self.pre_job_hook_list = self._pre_job_hooks
+    self.post_job_hook_list = self._post_job_hooks
       
   def _load_settings(self):
     """Loads user-defined settings."""
@@ -75,6 +91,95 @@ class BaseWorkflow(object):
                           'settings.'.format(FLAGS.settings_path))
     for setting, value in settings.iteritems():
       setattr(FLAGS, setting, value)
+
+  def add_pre_hook(self, function, kwargs=None):
+    """Adds a funtion to the list of hooks run before the main workflow.
+
+    args:
+    function -- callable to be called when hook is run
+
+    kwargs:
+    kwargs -- dictionary of key word arguments to pass to function
+
+    """
+    if kwargs is None:
+      kwargs = dict()
+    self._pre_job_hooks.append((function, kwargs))
+
+
+  def insert_pre_hook(self, index, function, kwargs=None):
+    """Inserts a funtion to the list of hooks run before the main workflow.
+
+    Inserting is most useful if you want to ensure that your hook runs first in
+    the list. To do so, pass 0 as the value of index. You can technically
+    insert a hook at any position, but it can be difficult to know what other
+    hooks have been inserted by the workflow class being used.
+
+    args:
+    index -- an int for the positional index at which the hook will be inserted
+    function -- callable to be called when hook is run
+
+    kwargs:
+    kwargs -- dictionary of key word arguments to pass to function
+
+    """
+    if kwargs is None:
+      kwargs = dict()
+    self._pre_job_hooks.insert(index, (function, kwargs))
+
+  def delete_pre_hook(self, index):
+    """Removes, by index number, a hook run before the main workflow.
+
+    args:
+    index -- an int for the positional index at which the hook resides.
+
+    """
+    self._pre_job_hooks.pop(index)
+
+
+  def add_post_hook(self, function, kwargs=None):
+    """Adds a funtion to the list of hooks run after the main workflow.
+
+    args:
+    function -- callable to be called when hook is run
+
+    kwargs:
+    kwargs -- dictionary of key word arguments to pass to function
+
+    """
+    if kwargs is None:
+      kwargs = dict()
+    self._post_job_hooks.append((function, kwargs))
+
+
+  def insert_post_hook(self, index, function, kwargs=None):
+    """Inserts a funtion to the list of hooks run after the main workflow.
+
+    Inserting is most useful if you want to ensure that your hook runs first in
+    the list. To do so, pass 0 as the value of index. You can technically
+    insert a hook at any position, but it can be difficult to know what other
+    hooks have been inserted by the workflow class being used.
+
+    args:
+    index -- an int for the positional index at which the hook will be inserted
+    function -- callable to be called when hook is run
+
+    kwargs:
+    kwargs -- dictionary of key word arguments to pass to function
+
+    """
+    if kwargs is None:
+      kwargs = dict()
+    self._post_job_hooks.insert(index, (function, kwargs))
+
+  def delete_post_hook(self, index):
+    """Removes, by index number, a hook run after the main workflow.
+
+    args:
+    index -- an int for the positional index at which the hook resides.
+
+    """
+    self._post_job_hooks.pop(index)
 
   def _process_pre_job_hooks(self):
     """Executes pre-job hook functions.
@@ -88,7 +193,7 @@ class BaseWorkflow(object):
     """ 
     self.logger.info('processing pre-job hooks...')
     for task in self.pre_job_hook_list:
-      # Let's do some assignments for readability
+      # Let's do some assignments for readability.
       hook = task[0]
       kwargs = task[1]
       hook(**kwargs)
@@ -98,7 +203,7 @@ class BaseWorkflow(object):
 
     args:
     error_case -- bool indicating if an error occured in pre-job hooks or
-        in _run_backup()
+        in run()
 
     This method works almost identically to _process_pre_job_hooks(), with
     the additional functionality of handling error cases, usually used to
@@ -108,9 +213,9 @@ class BaseWorkflow(object):
     However, it is entrirely up to the post-job function to decide what
     behavior to change when error_case is True. For example, if the
     post-job function deletes old backups it may want to skip that
-    operation when error_case is True to avoid reducing the number of data
+    operation when error_case is True to avoid reducing the number of recovery
     points in the backup history.
-    
+
     """
     if error_case:
       self.logger.error('processing post-job hooks for error case...')
@@ -118,14 +223,14 @@ class BaseWorkflow(object):
       self.logger.info('processing post-job hooks...')
 
     for task in self.post_job_hook_list:
-      # Let's do some assignments for readability
+      # Let's do some assignments for readability.
       hook = task[0]
       kwargs = task[1]
       kwargs['error_case'] = error_case
       hook(**kwargs)
 
-  def _run_command(self, command, host='localhost'):
-    """Runs an arbitrary command on host.
+  def run_command(self, command, host='localhost'):
+    """Runs an arbitrary command on a given host.
 
     args:
     command -- str or list representing a command line
@@ -138,10 +243,6 @@ class BaseWorkflow(object):
     host named in the host argument via SSH, or locally if host is
     "localhost".
 
-    TODO(jpwoodbu) Consider writing a custom exception class for this.
-    Returns a tuple with (stdout, stderr) if the exitcode is zero,
-    otherwise Exception is raised.
-
     """
     # make args a list if it's not already so
     if isinstance(command, basestring):
@@ -149,15 +250,15 @@ class BaseWorkflow(object):
     elif isinstance(command, list):
       args = command
     else:
-      raise TypeError('_run_command: command arg must be str or list')
+      raise TypeError('run_command: command arg must be str or list')
 
-    # add SSH arguments if this is a remote command
+    # Add SSH arguments if this is a remote command.
     if host != 'localhost':
       ssh_args = shlex.split('{ssh} {user}@%{host}'.format(
           ssh=self.ssh_path, user=self.remote_user, host=host))
       args = ssh_args + args
 
-    self.logger.debug('_run_command %r' % args)
+    self.logger.debug('run_command %r' % args)
     stdout = str()
     stderr = str()
     exitcode = 0
@@ -187,25 +288,31 @@ class BaseWorkflow(object):
           self.logger.warning(stderr)
         exitcode = p.returncode
       except IOError:
-        raise Exception('Unable to execute/find {args}'.format(args=args))
+        raise CommandNotFound('Unable to execute/find {}'.format(args))
 
       if exitcode > 0:
         error_message = ('[{host}] A command terminated with errors and '
                          'likely requires intervention. '
                          'The command attempted was "{command}".').format(
                              host=host, command=command)
-        raise Exception(error_message)
+        raise NonZeroExitCode(error_message)
 
-    return (stdout, stderr)
+    return stdout, stderr
 
-  def _run_command_with_retries(self, command, host='localhost', try_number=0):
+  def _run_command(self, *args, **kwargs):
+    """Alias for run_command() to provide backward compatibility."""
+    self.logger.warning(
+        '_run_command() is deprecated. Please use run_command().')
+    self.run_command(*args, **kwargs)
+
+  def run_command_with_retries(self, command, host='localhost', try_number=0):
     """Runs a command retrying on failure up to self.max_retries."""
     try:
-      self._run_command(command, host)
+      self.run_command(command, host)
     except Exception, e:
       if try_number > self.max_retries:
         raise e
-      self._run_command_with_retries(command, host, try_number + 1)
+      self.run_command_with_retries(command, host, try_number + 1)
 
   def _run_custom_workflow(self):
     """Override this method to run the desired workflow."""

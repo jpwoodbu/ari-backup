@@ -80,10 +80,9 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     self.zfs_snapshot_prefix = FLAGS.zfs_snapshot_prefix
     self.zfs_snapshot_timestamp_format = FLAGS.zfs_snapshot_timestamp_format
 
-    self.post_job_hook_list.append((self._create_zfs_snapshot, {}))
-    self.post_job_hook_list.append(
-        (self._remove_zfs_snapshots_older_than,
-         {'days': snapshot_expiration_days}))
+    self.add_post_hook(self._create_zfs_snapshot)
+    self.add_post_hook(self._remove_zfs_snapshots_older_than,
+                       {'days': snapshot_expiration_days})
 
   def _run_custom_workflow(self):
     """Run rsync backup of LVM snapshot to ZFS dataset."""
@@ -106,7 +105,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
         src=rsync_src,
         dst=self.rsync_dst)
 
-    self._run_command(command, self.source_hostname)
+    self.run_command(command, self.source_hostname)
     self.logger.debug('ZFSLVMBackup._run_custom_workflow completed')
 
   def _create_zfs_snapshot(self, error_case):
@@ -129,7 +128,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
       snapshot_name = self.snapshot_prefix + timestamp
       command = 'zfs snapshot {dataset_name}@{snapshot_name}'.format(
           dataset_name=self.dataset_name, snapshot_name=snapshot_name)
-      self._run_command(command, self.zfs_hostname)
+      self.run_command(command, self.zfs_hostname)
 
   def _remove_zfs_snapshots_older_than(self, days, error_case):
     """Destroy snapshots older than the given numnber of days.
@@ -151,7 +150,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
       # Let's find all the snapshots for this dataset
       command = 'zfs get -rH -o name,value type {dataset_name}'.format(
           dataset_name=self.dataset_name)
-      (stdout, stderr) = self._run_command(command, self.zfs_hostname)
+      (stdout, stderr) = self.run_command(command, self.zfs_hostname)
 
       snapshots = []
       # Sometimes we get extra lines which are empty, so we'll strip the lines.
@@ -169,10 +168,10 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
       for snapshot in snapshots:
         command = 'zfs get -H -o value creation {snapshot}'.format(
             snapshot=snapshot)
-        (stdout, stderr) = self._run_command(command, self.zfs_hostname)
+        (stdout, stderr) = self.run_command(command, self.zfs_hostname)
         creation_time = datetime.strptime(stdout.strip(), '%a %b %d %H:%M %Y')
         if creation_time <= expiration:
-          self._run_command('zfs destroy {snapshot}'.format(snapshot=snapshot),
+          self.run_command('zfs destroy {snapshot}'.format(snapshot=snapshot),
               self.zfs_hostname)
           snapshots_destroyed = True
           self.logger.info('{snapshot} destroyed'.format(snapshot=snapshot))

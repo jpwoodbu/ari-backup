@@ -42,11 +42,11 @@ class LVMSourceMixIn(object):
     self.snapshot_mount_point_base_path = os.path.join(
         self.snapshot_mount_root, self.label)
 
-    # Setup pre and post job hooks to manage snapshot work flow.
-    self.pre_job_hook_list.append((self._create_snapshots, {}))
-    self.pre_job_hook_list.append((self._mount_snapshots, {}))
-    self.post_job_hook_list.append((self._umount_snapshots, {}))
-    self.post_job_hook_list.append((self._delete_snapshots, {}))
+    # Set up pre and post job hooks to manage snapshot workflow.
+    self.add_pre_hook(self._create_snapshots)
+    self.add_pre_hook(self._mount_snapshots)
+    self.add_post_hook(self._umount_snapshots)
+    self.add_post_hook(self._delete_snapshots)
 
   def _create_snapshots(self):
     """Creates snapshots of all the volumns listed in self.lv_list."""
@@ -68,7 +68,7 @@ class LVMSourceMixIn(object):
       # TODO(jpwoodbu) Is it really OK to always make a 1GB exception table?
       command = 'lvcreate -s -L 1G {lv_path} -n {new_lv_name}'.format(
           lv_path=lv_path, new_lv_name=new_lv_name)
-      self._run_command(command, self.source_hostname)
+      self.run_command(command, self.source_hostname)
 
       self.lv_snapshots.append({
           'lv_path': vg_name + '/' + new_lv_name,
@@ -93,7 +93,7 @@ class LVMSourceMixIn(object):
       if snapshot['created']:
         lv_path = snapshot['lv_path']
         # -f makes lvremove not interactive
-        self._run_command_with_retries('lvremove -f {lv_path}'.format(
+        self.run_command_with_retries('lvremove -f {lv_path}'.format(
             lv_path=lv_path), self.source_hostname)
         snapshot['created'] = False
 
@@ -116,7 +116,7 @@ class LVMSourceMixIn(object):
       mount_options = snapshot['mount_options']
 
       # mkdir the mount point
-      self._run_command('mkdir -p %s' % mount_path, self.source_hostname)
+      self.run_command('mkdir -p %s' % mount_path, self.source_hostname)
       snapshot['mount_point_created'] = True
 
       # If where we want to mount our LV is already a mount point then
@@ -137,7 +137,7 @@ class LVMSourceMixIn(object):
             device_path=device_path,
             mount_path=mount_path)
 
-      self._run_command(command, self.source_hostname)
+      self.run_command(command, self.source_hostname)
       snapshot['mounted'] = True
 
   def _umount_snapshots(self, error_case=None):
@@ -165,11 +165,11 @@ class LVMSourceMixIn(object):
     for snapshot in local_lv_snapshots:
       mount_path = snapshot['mount_path']
       if snapshot['mounted']:
-        self._run_command_with_retries('umount {}'.format(mount_path),
+        self.run_command_with_retries('umount {}'.format(mount_path),
             self.source_hostname)
         snapshot['mounted'] = False
       if snapshot['mount_point_created']:
-        self._run_command_with_retries('rmdir {}'.format(mount_path),
+        self.run_command_with_retries('rmdir {}'.format(mount_path),
             self.source_hostname)
         snapshot['mount_point_created'] = False
 

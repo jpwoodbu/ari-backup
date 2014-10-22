@@ -146,7 +146,7 @@ class RdiffBackup(workflow.BaseWorkflow):
             backup_store_path=self.backup_store_path, label=self.label))
 
     # Rdiff-backup GO!
-    self._run_command(arg_list)
+    self.run_command(arg_list)
     self.logger.debug('_run_backup completed')
 
   def _remove_older_than(self, timespec, error_case):
@@ -174,5 +174,5 @@ class RdiffBackup(workflow.BaseWorkflow):
           '{}/{}'.format(self.backup_store_path, self.label),
       ]
 
-      self._run_command(arg_list)
+      self.run_command(arg_list)
       self.logger.info('remove_older_than %s completed' % timespec)
