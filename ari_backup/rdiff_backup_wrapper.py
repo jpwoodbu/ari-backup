@@ -56,18 +56,71 @@ class RdiffBackup(workflow.BaseWorkflow):
     self.ssh_compression = FLAGS.ssh_compression
     self.top_level_src_dir = FLAGS.top_level_src_dir
 
-    # Include nothing by default.
-    self.include_dir_list = []
-    self.include_file_list = []
-    # Exclude nothing by default.
-    # We'll put the '**' exclude on the end of the arg_list later.
-    self.exclude_dir_list = []
-    self.exclude_file_list = []
+    # Initialize include and exclude lists.
+    self._include_dirs = list()
+    self._include_files = list()
+    self._exclude_dirs = list()
+    self._exclude_files = list()
+
+    # Provide backward compatibility for config files using attributes
+    # directly.
+    self.include_dir_list = self._include_dirs
+    self.include_file_list = self._include_files
+    self.exclude_dir_list = self._exclude_dirs
+    self.exclude_file_list = self._exclude_files
 
     if remove_older_than_timespec is not None:
       self.post_job_hook_list.append((
           self._remove_older_than,
           {'timespec': remove_older_than_timespec}))
+
+  def include_dir(self, path):
+    """Add a directory to be included in the backup.
+
+    The provided path is added to the top_level_src_dir when considering
+    whether files should be included in the backup.
+
+    args:
+    path -- directory path to include in the backup
+
+    """
+    self._include_dirs.append(path)
+
+  def include_file(self, path):
+    """Add a file to be included in the backup.
+
+    The provided path is added to the top_level_src_dir when considering
+    whether files should be included in the backup.
+
+    args:
+    path -- file path to include in the backup
+
+    """
+    self._include_files.append(path)
+
+  def exclude_dir(self, path):
+    """Add a directory to be excluded in the backup.
+
+    The provided path is added to the top_level_src_dir when considering
+    whether files should be included in the backup.
+
+    args:
+    path -- directory path to exclude in the backup
+
+    """
+    self._exclude_dirs.append(path)
+
+  def exclude_file(self, path):
+    """Add a file to be excluded in the backup.
+
+    The provided path is added to the top_level_src_dir when considering
+    whether files should be included in the backup.
+
+    args:
+    path -- file path to exclude in the backup
+
+    """
+    self._exclude_files.append(path)
 
   def _run_custom_workflow(self):
     """Run rdiff-backup job.
@@ -154,8 +207,8 @@ class RdiffBackup(workflow.BaseWorkflow):
 
     args:
     timespec -- a string representing the maximum age of
-        a backup datapoint (uses the same format as the --remove-older-than
-        argument for rdiff-backup [e.g. 30D, 10W, 6M])
+      a backup datapoint (uses the same format as the --remove-older-than
+      argument for rdiff-backup [e.g. 30D, 10W, 6M])
     error_case -- bool indicating if we're being called after a failure
 
     Post-job hook that uses rdiff-backup's --remove-older-than feature to
