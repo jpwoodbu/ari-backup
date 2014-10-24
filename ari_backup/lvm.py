@@ -29,17 +29,21 @@ class LVMSourceMixIn(object):
     self.snapshot_mount_root = FLAGS.snapshot_mount_root
     self.snapshot_suffix = FLAGS.snapshot_suffix
 
-    # This is a list of 2-tuples, where each inner 2-tuple expresses the LV to
-    # back up, the mount point for that LV any mount options necessary. For
-    # example: [('hostname/root, '/', 'noatime'),]
-    # TODO(jpwoodbu) I wonder if noatime being used all the time makes sense to
-    # improve read performance and reduce writes to the snapshots.
-    self.lv_list = []
+    # This is a list of 3-tuples, where each inner 3-tuple expresses the LV to
+    # back up, the mount point for that LV, and any mount options necessary.
+    # For example: [('hostname/root, '/', 'noatime'),] TODO(jpwoodbu) I wonder
+    # if noatime being used all the time makes sense to improve read
+    # performance and reduce writes to the snapshots.
+    self._logical_volumes = list()
+
+    # Provide backward compatibility for config files using attributes
+    # directly.
+    self.lv_list = self._logical_volumes
 
     # A list of dicts with the snapshot paths and where they should be mounted.
-    self.lv_snapshots = []
+    self._lv_snapshots = list()
     # Mount the snapshots in a directory named for this job's label.
-    self.snapshot_mount_point_base_path = os.path.join(
+    self._snapshot_mount_point_base_path = os.path.join(
         self.snapshot_mount_root, self.label)
 
     # Set up pre and post job hooks to manage snapshot workflow.
@@ -48,10 +52,30 @@ class LVMSourceMixIn(object):
     self.add_post_hook(self._umount_snapshots)
     self.add_post_hook(self._delete_snapshots)
 
+  def add_volume(self, name, mount_point, mount_options=None):
+    """Adds logical volume to list of volumes to be backed up.
+
+    args:
+    name -- full logical volume path (with volume group) in group/volume_name
+      format.
+    mount_point -- path where the volume should be mounted during the backup.
+      This is normally the same path where the volume is normally mounted. For
+      example, if the volume is normally mounted at /var/www, the value passed
+      here should be /var/www if you want this data to be in the /var/www
+      directory in the backup
+    mount_options -- a str of mount options to be applied when mounting the
+      snapshot. For example, "noatime,ro".
+
+    """
+    volume = (name, mount_point, mount_options)
+    self._logical_volumes.append(volume)
+
   def _create_snapshots(self):
     """Creates snapshots of all the volumns listed in self.lv_list."""
     self.logger.info('creating LVM snapshots...')
     for volume in self.lv_list:
+      # TODO(jpwoodbu) This try/except won't ne necessary when the deprecated
+      # interface to the self.lv_list is removed.
       try:
         lv_path, src_mount_path, mount_options = volume
       except ValueError:
@@ -62,7 +86,7 @@ class LVMSourceMixIn(object):
       new_lv_name = lv_name + self.snapshot_suffix
       mount_path = ('{snapshot_mount_point_base_path}'
                     '{src_mount_path}'.format(
-          snapshot_mount_point_base_path=self.snapshot_mount_point_base_path,
+          snapshot_mount_point_base_path=self._snapshot_mount_point_base_path,
           src_mount_path=src_mount_path))
 
       # TODO(jpwoodbu) Is it really OK to always make a 1GB exception table?
@@ -70,7 +94,7 @@ class LVMSourceMixIn(object):
           lv_path=lv_path, new_lv_name=new_lv_name)
       self.run_command(command, self.source_hostname)
 
-      self.lv_snapshots.append({
+      self._lv_snapshots.append({
           'lv_path': vg_name + '/' + new_lv_name,
           'mount_path': mount_path,
           'mount_options': mount_options,
@@ -80,7 +104,7 @@ class LVMSourceMixIn(object):
       })
 
   def _delete_snapshots(self, error_case=None):
-    """Deletes snapshots in self.lv_snapshots.
+    """Deletes snapshots in self._lv_snapshots.
 
     kwargs:
     error_case -- bool indicating if we're being called after a failure
@@ -89,7 +113,7 @@ class LVMSourceMixIn(object):
 
     """ 
     self.logger.info('deleting LVM snapshots...')
-    for snapshot in self.lv_snapshots:
+    for snapshot in self._lv_snapshots:
       if snapshot['created']:
         lv_path = snapshot['lv_path']
         # -f makes lvremove not interactive
@@ -109,7 +133,7 @@ class LVMSourceMixIn(object):
 
     """
     self.logger.info('mounting LVM snapshots...')
-    for snapshot in self.lv_snapshots:
+    for snapshot in self._lv_snapshots:
       lv_path = snapshot['lv_path']
       device_path = '/dev/' + lv_path
       mount_path = snapshot['mount_path']
@@ -141,7 +165,7 @@ class LVMSourceMixIn(object):
       snapshot['mounted'] = True
 
   def _umount_snapshots(self, error_case=None):
-    """Umounts mounted snapshots in self.lv_snapshots.
+    """Umounts mounted snapshots in self._lv_snapshots.
 
     kwargs:
     error_case -- bool indicating if we're being called after a failure
@@ -149,18 +173,18 @@ class LVMSourceMixIn(object):
     This method behaves the same in the normal and error cases.
 
     """ 
-    # TODO(jpwoodbu) If the user doesn't put '/' in their include_dir_list,
+    # TODO(jpwoodbu) If the user doesn't put '/' in their _include_dirs,
     # then we'll end up with directories around where the snapshots are mounted
     # that will not get cleaned up. We should probably add functionality to
     # make sure the "label" directory is recursively removed. Check out
     # shutil.rmtree() to help resolve this issue.
 
     self.logger.info('umounting LVM snapshots...')
-    # We need a local copy of the lv_snapshots list to muck with in this
+    # We need a local copy of the _lv_snapshots list to muck with in this
     # method.
-    local_lv_snapshots = self.lv_snapshots
-    # We want to umount these LVs in reverse order as this should ensure that
-    # we umount the deepest paths first.
+    local_lv_snapshots = self._lv_snapshots
+    # We want to umount these logical volumes in reverse order as this should
+    # ensure that we umount the deepest paths first.
     local_lv_snapshots.reverse()
     for snapshot in local_lv_snapshots:
       mount_path = snapshot['mount_path']
@@ -185,7 +209,7 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
         
     This method overrides the base class's _run_custom_workflow() so that we
     can modify the include_dir_list and exclude_dir_list to have the
-    snapshot_mount_point_base_path prefixed to their paths. This allows the
+    _snapshot_mount_point_base_path prefixed to their paths. This allows the
     user to configure what to backup from the perspective of the file system
     on the snapshot itself.
 
@@ -193,30 +217,30 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     # TODO(jpwoodbu) Cooking the paths should be done in its own function.
     self.logger.debug('LVMBackup._run_custom_workflow started')
 
-    # Cook the self.include_dir_list and self.exclude_dir_list so that the src
-    # paths include the mount path for the LV(s).
-    local_include_dir_list = []
-    for include_dir in self.include_dir_list:
+    # Cook the self._include_dirs and self._exclude_dirs so that the src paths
+    # include the mount path for the logical volumes.
+    local_include_dirs = list()
+    for include_dir in self._include_dirs:
       include_path = '{snapshot_mount_point_base_path}{include_dir}'.format(
-          snapshot_mount_point_base_path=self.snapshot_mount_point_base_path,
+          snapshot_mount_point_base_path=self._snapshot_mount_point_base_path,
           include_dir=include_dir)
-      local_include_dir_list.append(include_path)
+      local_include_dirs.append(include_path)
 
-    local_exclude_dir_list = []
-    for exclude_dir in self.exclude_dir_list:
+    local_exclude_dirs = []
+    for exclude_dir in self._exclude_dirs:
       exclude_path = '{snapshot_mount_point_base_path}{exclude_dir}'.format(
-          snapshot_mount_point_base_path=self.snapshot_mount_point_base_path,
+          snapshot_mount_point_base_path=self._snapshot_mount_point_base_path,
           exclude_dir=exclude_dir)
-      local_exclude_dir_list.append(exclude_path)
+      local_exclude_dirs.append(exclude_path)
 
-    self.include_dir_list = local_include_dir_list
-    self.exclude_dir_list = local_exclude_dir_list
+    self._include_dirs = local_include_dirs
+    self._exclude_dirs = local_exclude_dirs
 
     # We don't support include_file_list and exclude_file_list in this class as
     # it would take extra effort and it's not likely to be used.
 
     # Have the base class perform an rdiff-backup.
-    self.top_level_src_dir = self.snapshot_mount_point_base_path
+    self.top_level_src_dir = self._snapshot_mount_point_base_path
     super(RdiffLVMBackup, self)._run_custom_workflow()
 
     self.logger.debug('LVMBackup._run_custom_workflow completed')
