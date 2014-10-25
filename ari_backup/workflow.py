@@ -24,7 +24,7 @@ from logger import Logger
 SETTINGS_PATH = '/etc/ari-backup/ari-backup.conf.yaml'
 
 FLAGS = gflags.FLAGS
-gflags.DEFINE_boolean('debug_logging', False, 'enable debug logging')
+gflags.DEFINE_boolean('debug', False, 'enable debug logging')
 gflags.DEFINE_boolean('dry_run', False, 'log actions but do not execute them')
 gflags.DEFINE_integer('max_retries', 3, 'number of times to retry a command')
 gflags.DEFINE_string('remote_user', 'root', 'username used for SSH sessions')
@@ -62,8 +62,7 @@ class BaseWorkflow(object):
     # Setup logging.
     # TODO(jpwoodbu) Considering renaming the heading to this logging
     # statement.
-    self.logger = Logger('ARIBackup ({label})'.format(label=label),
-                         FLAGS.debug_logging)
+    self.logger = Logger('ARIBackup ({label})'.format(label=label),FLAGS.debug)
     self.label = label
 
     # Assign flags to instance vars so they might be easily overridden in

@@ -81,7 +81,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     self.zfs_snapshot_timestamp_format = FLAGS.zfs_snapshot_timestamp_format
 
     self.add_post_hook(self._create_zfs_snapshot)
-    self.add_post_hook(self._remove_zfs_snapshots_older_than,
+    self.add_post_hook(self._destroy_expired_zfs_snapshots,
                        {'days': snapshot_expiration_days})
 
   def _run_custom_workflow(self):
@@ -130,7 +130,24 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
           dataset_name=self.dataset_name, snapshot_name=snapshot_name)
       self.run_command(command, self.zfs_hostname)
 
-  def _remove_zfs_snapshots_older_than(self, days, error_case):
+  def _find_snapshots_older_than(self, days):
+    expiration = datetime.now() - timedelta(days=days)
+    # Let's find all the snapshots for this dataset.
+    command = 'zfs get -rH -o name,value type {dataset_name}'.format(
+        dataset_name=self.dataset_name)
+    (stdout, stderr) = self.run_command(command, self.zfs_hostname)
+
+    snapshots = []
+    # Sometimes we get extra lines which are empty, so we'll strip the lines.
+    for line in stdout.strip().splitlines():
+      name, dataset_type = line.split('\t')
+      if dataset_type == 'snapshot':
+        # Let's try to only consider destroying snapshots made by us ;)
+        if name.split('@')[1].startswith(self.snapshot_prefix):
+            snapshots.append(name)
+    return snapshots
+
+  def _destroy_expired_zfs_snapshots(self, days, error_case):
     """Destroy snapshots older than the given numnber of days.
 
     args:
@@ -145,22 +162,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     """
     if not error_case:
       self.logger.info('looking for expired ZFS snapshots...')
-      expiration = datetime.now() - timedelta(days=days)
-
-      # Let's find all the snapshots for this dataset
-      command = 'zfs get -rH -o name,value type {dataset_name}'.format(
-          dataset_name=self.dataset_name)
-      (stdout, stderr) = self.run_command(command, self.zfs_hostname)
-
-      snapshots = []
-      # Sometimes we get extra lines which are empty, so we'll strip the lines.
-      for line in stdout.strip().splitlines():
-        name, dataset_type = line.split('\t')
-        if dataset_type == 'snapshot':
-          # Let's try to only consider destroying snapshots made by us ;)
-          if name.split('@')[1].startswith(self.snapshot_prefix):
-              snapshots.append(name)
-
+      snapshots = self._find_snapshots_older_than(days)
       # Sentinel value used to log if we destroyed no snapshots.
       snapshots_destroyed = False
 
