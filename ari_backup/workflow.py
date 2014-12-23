@@ -43,16 +43,56 @@ class NonZeroExitCode(WorkflowError):
   """Raises when subprocess returns a non-zero exitcode."""
 
 
+class CommandRunner(object):
+  """This class is a simple abstration layer to the subprocess module."""
+
+  def run(self, args):
+    """Runs a command as a subprocess.
+
+    args:
+    args -- list of command line arguments to be executed.
+
+    returns:
+    A 3-tuple containing a str with the stdout, a str with the stderr, and an
+    int with the return code of the executed process.
+
+    raises:
+    CommandNotFound -- when the excutable is not found on the file system.
+
+    """
+    try:
+      self._process = subprocess.Popen(args, stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE)
+    except IOError:
+      raise CommandNotFound('Unable to execute/find {}'.format(args))
+
+    stdout, stderr = self.process.communicate()
+    return stdout, stderr, self._process.returncode
+
+  def terminate(self):
+    """Sends a SIGTERM to the executed subprocess."""
+    # TODO(jpwoodbu) terminate() doesn't block but it would be nice if it did,
+    # so we should be polling.
+    self._process.terminate()
+
+
 class BaseWorkflow(object):
   """Base class with core workflow features."""
 
-  def __init__(self, label):
+  def __init__(self, label, settings_path=SETTINGS_PATH, command_runner=None):
     """Configure a workflow object.
 
     args:
     label -- a str to label the backup job 
+    settings_path -- a str or None which is the path to the global settingsi
+      file. If None, then loading global settings is skipped.
+    command_runner -- An instantiated object that provides the CommandRunner
+      interface or None. If None, the CommandRunner class will be used by
+      default. 
 
     """
+    self._settings_path = settings_path
     # Override default flag values from user provided settings file.
     self._load_settings()
     # Initialize FLAGS. Normally this is done by the main() function but in the 
@@ -79,12 +119,21 @@ class BaseWorkflow(object):
     # Maintain backward compatibility with old hooks interface.
     self.pre_job_hook_list = self._pre_job_hooks
     self.post_job_hook_list = self._post_job_hooks
+
+    # Initialize the command runner object.
+    if command_runner is None:
+      self._command_runner = CommandRunner()
+    else:
+      self._command_runner = command_runner
       
   def _load_settings(self):
     """Loads user-defined settings."""
+    if self._settings_path is None:
+      return
+
     settings = dict()
     try:
-      with open(SETTINGS_PATH) as settings_file:
+      with open(self._settings_path) as settings_file:
         settings = yaml.load(settings_file)
     except IOError:
       print ('Unable to load {} file. Continuing with default '
@@ -92,8 +141,10 @@ class BaseWorkflow(object):
     for setting, value in settings.iteritems():
       try:
         FLAGS.SetDefault(setting, value)
-      except AttributeError:
-        pass
+      except AttributeError as e:
+        # We can't log anything yet because self.logger isn't set up.
+        print('WARNING: Skipping unknown setting in {}: {}'.format(
+              SETTINGS_PATH, e))
 
   def add_pre_hook(self, function, kwargs=None):
     """Adds a funtion to the list of hooks run before the main workflow.
@@ -266,39 +317,31 @@ class BaseWorkflow(object):
     stderr = str()
     exitcode = 0
     if not self.dry_run:
+      # We really want to block until our subprocess exists or
+      # KeyboardInterrupt. If we don't, clean-up tasks will likely fail.
       try:
-        p = subprocess.Popen(args, stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE)
-        # We really want to block until our subprocess exists or
-        # KeyboardInterrupt. If we don't, clean-up tasks will likely fail.
-        try:
-          stdout, stderr = p.communicate()
-        except KeyboardInterrupt:
-          # Let's try to stop our subprocess if the user issues a
-          # KeyboardInterrupt.
-          # TODO(jpwoodbu) terminate() doesn't block, so we should be polling.
-          p.terminate()
-          # We should re-raise this exception so our caller knows the user
-          # wants to stop the workflow.
-          raise
+        stdout, stderr, exitcode = self._command_runner.run(args)
+      except KeyboardInterrupt:
+        # Let's try to stop our subprocess if the user issues a
+        # KeyboardInterrupt.
+        self._command_runner.terminate()
+        # We should re-raise this exception so our caller knows the user
+        # wants to stop the workflow.
+        raise
 
-        if stdout:
-          self.logger.debug(stdout)
-        if stderr:
-          # Warning level should be fine here since we'll also look at
-          # the exitcode.
-          self.logger.warning(stderr)
-        exitcode = p.returncode
-      except IOError:
-        raise CommandNotFound('Unable to execute/find {}'.format(args))
+      if stdout:
+        self.logger.debug(stdout)
+      if stderr:
+        # Warning level should be fine here since we'll also look at
+        # the exitcode.
+        self.logger.warning(stderr)
 
-      if exitcode > 0:
-        error_message = ('[{host}] A command terminated with errors and '
-                         'likely requires intervention. '
-                         'The command attempted was "{command}".').format(
-                             host=host, command=command)
-        raise NonZeroExitCode(error_message)
+    if exitcode > 0:
+      error_message = ('[{host}] A command terminated with errors and '
+                       'likely requires intervention. '
+                       'The command attempted was "{command}".').format(
+                           host=host, command=command)
+      raise NonZeroExitCode(error_message)
 
     return stdout, stderr
 

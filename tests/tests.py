@@ -1,4 +1,4 @@
-import unittest2 as unittest
+import unittest
 
 class TestNothing(unittest.TestCase):
     def setUp(self):
