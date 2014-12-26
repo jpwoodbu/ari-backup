@@ -1,4 +1,5 @@
 """LVM based backup workflows and MixIn classes."""
+import copy
 import os
 
 import gflags
@@ -20,6 +21,8 @@ class LVMSourceMixIn(object):
   This class registers pre-job and post-job hooks to create and mount LVM
   snapshots before and after a backup job.
 
+  This class depends on the source_hostname instance variable which should be
+  defined by any subclass of workflow.BaseWorkFlow that also uses this mixin.
   """
   def __init__(self, *args, **kwargs):
     super(LVMSourceMixIn, self).__init__(*args, **kwargs)
@@ -73,7 +76,7 @@ class LVMSourceMixIn(object):
   def _create_snapshots(self):
     """Creates snapshots of all the volumns listed in self.lv_list."""
     self.logger.info('creating LVM snapshots...')
-    for volume in self.lv_list:
+    for volume in self._logical_volumes:
       # TODO(jpwoodbu) This try/except won't ne necessary when the deprecated
       # interface to the self.lv_list is removed.
       try:
@@ -129,7 +132,7 @@ class LVMSourceMixIn(object):
     successfully mounted so that _umount_snapshots() knows which
     snapshots to try to umount.
 
-    TODO add mount_options to documentation for backup config files
+    TODO(jpwoodbu) Add mount_options to documentation for backup config files.
 
     """
     self.logger.info('mounting LVM snapshots...')
@@ -182,7 +185,7 @@ class LVMSourceMixIn(object):
     self.logger.info('umounting LVM snapshots...')
     # We need a local copy of the _lv_snapshots list to muck with in this
     # method.
-    local_lv_snapshots = self._lv_snapshots
+    local_lv_snapshots = copy.copy(self._lv_snapshots)
     # We want to umount these logical volumes in reverse order as this should
     # ensure that we umount the deepest paths first.
     local_lv_snapshots.reverse()

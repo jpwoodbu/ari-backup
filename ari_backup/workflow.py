@@ -377,6 +377,8 @@ class BaseWorkflow(object):
     _run_customer_workflow(), then the error_case argument will be set to
     True.
 
+    Returns:
+      A bool for whether the job ran successfully or not.
     """
     error_case = False
     if self.dry_run:
@@ -400,6 +402,10 @@ class BaseWorkflow(object):
     finally:
       self._process_post_job_hooks(error_case)
       self.logger.info('stopped')
+      if error_case:
+        return False
+      else:
+        return True
 
   def run_backup(self):
     self.logger.warning('run_backup() is deprecated. '
