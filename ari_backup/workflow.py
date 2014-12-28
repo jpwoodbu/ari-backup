@@ -29,6 +29,7 @@ gflags.DEFINE_boolean('dry_run', False, 'log actions but do not execute them')
 gflags.DEFINE_integer('max_retries', 3, 'number of times to retry a command')
 gflags.DEFINE_string('remote_user', 'root', 'username used for SSH sessions')
 gflags.DEFINE_string('ssh_path', '/usr/bin/ssh', 'path to ssh binary')
+gflags.DEFINE_boolean('stderr_logging', True, 'enable error logging to stderr')
 
 
 class WorkflowError(Exception):
@@ -102,7 +103,8 @@ class BaseWorkflow(object):
     # Setup logging.
     # TODO(jpwoodbu) Considering renaming the heading to this logging
     # statement.
-    self.logger = Logger('ARIBackup ({label})'.format(label=label),FLAGS.debug)
+    self.logger = Logger('ARIBackup ({label})'.format(label=label),
+        FLAGS.debug, FLAGS.stderr_logging)
     self.label = label
 
     # Assign flags to instance vars so they might be easily overridden in

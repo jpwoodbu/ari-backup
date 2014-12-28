@@ -11,6 +11,8 @@ import workflow
 
 
 FLAGS = gflags.FLAGS
+# Disable logging to stderr when running tests.
+FLAGS.stderr_logging = False
 
 
 class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
@@ -32,21 +34,10 @@ class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     pass
 
 
-class LVMSourceMixInTest(unittest.TestCase):
+class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
   def setUp(self):
     super(LVMSourceMixInTest, self).setUp()
-    self._save_flags()
-
-  def tearDown(self):
-    super(LVMSourceMixInTest, self).tearDown()
-    self._restore_flags()
-
-  def _save_flags(self):
-    self._flag_values = copy.deepcopy(FLAGS.__dict__)
-
-  def _restore_flags(self):
-    FLAGS.__dict__.update(self._flag_values)
 
   @mock.patch.object(lvm.LVMSourceMixIn, '_delete_snapshots')
   @mock.patch.object(lvm.LVMSourceMixIn, '_umount_snapshots')
@@ -332,6 +323,53 @@ class LVMSourceMixInTest(unittest.TestCase):
     # Note that mountpoints are removed in reverse order.
     mock_command_runner.AssertCallsInOrder(
         [expected_call_fakevolume2, expected_call_fakevolume1])
+
+
+class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
+
+  def setUp(self):
+    super(RdiffLVMBackupTest, self).setUp()
+    FLAGS.backup_store_path = '/unused'
+
+  def testRunCustomWorkflow_prefixesIncludeDirs(self):
+    FLAGS.snapshot_mount_root = '/fake_root'
+    mock_command_runner = test_lib.GetMockCommandRunner()
+    backup = lvm.RdiffLVMBackup(
+        source_hostname='unused', label='fake_backup', settings_path=None,
+        command_runner=mock_command_runner)
+    
+    backup.add_volume('fake_volume_group/fake_volume', '/var')
+    backup.include_dir('/var')
+    backup.run()
+
+    self.assertEqual(backup._include_dirs, ['/fake_root/fake_backup/var'])
+
+  def testRunCustomWorkflow_prefixesExcludeDirs(self):
+    FLAGS.snapshot_mount_root = '/fake_root'
+    mock_command_runner = test_lib.GetMockCommandRunner()
+    backup = lvm.RdiffLVMBackup(
+        source_hostname='unused', label='fake_backup', settings_path=None,
+        command_runner=mock_command_runner)
+    
+    backup.add_volume('fake_volume_group/fake_volume', '/var')
+    backup.include_dir('/var')
+    backup.exclude_dir('/var/cache')
+    backup.run()
+
+    self.assertEqual(
+        backup._exclude_dirs, ['/fake_root/fake_backup/var/cache'])
+
+  def testRunCustomWorkflow_updatesTopLevelSrcDirToSnapshotMountPointBasePath(
+      self):
+    FLAGS.snapshot_mount_root = '/fake_root'
+    mock_command_runner = test_lib.GetMockCommandRunner()
+    backup = lvm.RdiffLVMBackup(
+        source_hostname='unused', label='fake_backup', settings_path=None,
+        command_runner=mock_command_runner)
+    
+    backup.run()
+
+    self.assertEqual(backup.top_level_src_dir, '/fake_root/fake_backup')
 
 
 if __name__ == '__main__':

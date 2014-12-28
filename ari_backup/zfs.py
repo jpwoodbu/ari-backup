@@ -45,7 +45,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
   
   """
   def __init__(self, label, source_hostname, rsync_dst, zfs_hostname,
-               dataset_name, snapshot_expiration_days):
+               dataset_name, snapshot_expiration_days, **kwargs):
     """Configure a ZFSLVMBackup object.
 
     args:
@@ -66,7 +66,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
     """
     # Call our super class's constructor to enable LVM snapshot management
-    super(ZFSLVMBackup, self).__init__(label, source_hostname, None)
+    super(ZFSLVMBackup, self).__init__(label, source_hostname, None, **kwargs)
 
     # Assign instance vars specific to this class.
     self.rsync_dst = rsync_dst

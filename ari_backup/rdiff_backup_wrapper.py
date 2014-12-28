@@ -1,5 +1,6 @@
 """rdiff-backup based backup workflows."""
 import os
+import shlex
 
 import gflags
 
@@ -13,6 +14,13 @@ gflags.DEFINE_string('rdiff_backup_path', '/usr/bin/rdiff-backup',
                      'path to rdiff-backup binary')
 gflags.DEFINE_boolean('ssh_compression', False,
                       'compress rdiff-backup SSH streams')
+# terminal-verbosity=1 brings the terminal verbosity down so that we only see
+# errors.
+gflags.DEFINE_string('rdiff_backup_options',
+                     ('--exclude-device-files --exclude-fifos '
+                      '--exclude-sockets --terminal-verbosity 1'),
+                     'default rdiff-backup options')
+
 # The top_level_src_dir flag is used to define the context for the backup
 # mirror. This is especially handy when backing up mounted spanshots so that
 # the mirror doesn't also include the directory in which the snapshot is
@@ -33,7 +41,7 @@ class RdiffBackup(workflow.BaseWorkflow):
   """Workflow to backup machines using rdiff-backup."""
 
   def __init__(self, label, source_hostname,
-               remove_older_than_timespec=None):
+               remove_older_than_timespec=None, **kwargs):
     """Configure an RdiffBackup object.
 
     args:
@@ -46,7 +54,7 @@ class RdiffBackup(workflow.BaseWorkflow):
         --remove-older-than argument for rdiff-backup)
 
     """
-    super(RdiffBackup, self).__init__(label)
+    super(RdiffBackup, self).__init__(label, **kwargs)
     self.source_hostname = source_hostname
 
     # Assign flags to instance vars so they might be easily overridden in
@@ -69,10 +77,22 @@ class RdiffBackup(workflow.BaseWorkflow):
     self.exclude_dir_list = self._exclude_dirs
     self.exclude_file_list = self._exclude_files
 
+    self._check_required_flags()
+    self._check_required_binaries()
+
     if remove_older_than_timespec is not None:
       self.post_job_hook_list.append((
           self._remove_older_than,
           {'timespec': remove_older_than_timespec}))
+
+  def _check_required_flags(self):
+    if self.backup_store_path is None:
+      raise Exception('backup_store_path setting is not set')
+
+  def _check_required_binaries(self):
+    if not os.access(self.rdiff_backup_path, os.X_OK):
+      raise Exception('rdiff-backup does not appear to be installed or '
+                      'is not executable')
 
   def include_dir(self, path):
     """Add a directory to be included in the backup.
@@ -130,37 +150,20 @@ class RdiffBackup(workflow.BaseWorkflow):
 
     """ 
     self.logger.debug('_run_custom_workflow started')
-
-    # TODO(jpwoodbu) Move this sanity check into a pre-hook so we can avoid
-    # doing other pre-hook work if we're missing a critical setting. Also of
-    # note, it's too bad we can't use the gflags.MarkFlagAsRequired() function
-    # for this. But since we're not actually passing in flags using sys.argv
-    # most of the time, our hands are a bit tied.
-    if self.backup_store_path is None:
-      raise Exception('backup_store_path setting is not set')
-    if not os.access(self.rdiff_backup_path, os.X_OK):
-      raise Exception('rdiff-backup does not appear to be installed or '
-                      'is not executable')
-
     # Init our arguments list with the path to rdiff-backup.
     # This will be in the format we'd normally pass to the command-line
     # e.g. [ '--include', '/dir/to/include', '--exclude',
     # '/dir/to/exclude']
     arg_list = [self.rdiff_backup_path]
 
-    # setup some default rdiff-backup options
-    # TODO provide a way to override these
-    arg_list.append('--exclude-device-files')
-    arg_list.append('--exclude-fifos')
-    arg_list.append('--exclude-sockets')
-
-    # Bring the terminal verbosity down so that we only see errors
-    arg_list += ['--terminal-verbosity', '1']
+    # Add default options to arguments.
+    default_options = shlex.split(FLAGS.rdiff_backup_options)
+    arg_list.extend(default_options)
 
     # This conditional reads strangely, but that's because rdiff-backup not
     # only defaults to having SSH compression enabled, it also doesn't have an
-    # option to explicitly enable it -- only one to disable it.
-    if not self.ssh_compression:
+    # option to explicitly enable it -- only the option to disable it.
+    if not self.source_hostname == 'localhost' and not self.ssh_compression:
       arg_list.append('--ssh-no-compression')
 
     # Add exclude and includes to our arguments
@@ -194,9 +197,8 @@ class RdiffBackup(workflow.BaseWorkflow):
               top_level_src_dir=self.top_level_src_dir))
 
     # Add a destination argument
-    arg_list.append(
-        '{backup_store_path}/{label}'.format(
-            backup_store_path=self.backup_store_path, label=self.label))
+    arg_list.append('{backup_store_path}/{label}'.format(
+        backup_store_path=self.backup_store_path, label=self.label))
 
     # Rdiff-backup GO!
     self.run_command(arg_list)

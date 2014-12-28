@@ -11,7 +11,7 @@ class Logger(logging.Logger):
     INFO and above go to syslog, unless debug is True then DEBUG and above
 
   """ 
-  def __init__(self, name, debug=False):
+  def __init__(self, name, debug=False, stderr_logging=True):
     """
     args:
     name -- name passed to logging.Logger
@@ -31,13 +31,14 @@ class Logger(logging.Logger):
     formatter = logging.Formatter(log_format)
 
     # Emit to sys.stderr, ERROR and above, unless debug is True.
-    stream_handler = logging.StreamHandler(sys.stderr)
-    if debug:
-      stream_handler.setLevel(logging.DEBUG)
-    else:
-      stream_handler.setLevel(logging.ERROR)
-    stream_handler.setFormatter(formatter)
-    self.addHandler(stream_handler)
+    if stderr_logging:
+      stream_handler = logging.StreamHandler(sys.stderr)
+      if debug:
+        stream_handler.setLevel(logging.DEBUG)
+      else:
+        stream_handler.setLevel(logging.ERROR)
+      stream_handler.setFormatter(formatter)
+      self.addHandler(stream_handler)
 
     # Emit to syslog, INFO and above, or DEBUG if debug.
     syslog_handler = SysLogHandler('/dev/log')

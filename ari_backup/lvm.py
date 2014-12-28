@@ -207,6 +207,25 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
   def __init__(self, *args, **kwargs):
     super(RdiffLVMBackup, self).__init__(*args, **kwargs)
 
+  def _prefix_mount_point_to_paths(self, paths):
+    """Prefixes the snapshot_mount_point_base_path to each path in paths.
+
+    Args:
+      paths: list, list of strings representing paths for the backup config.
+
+    Returns:
+      List of strings with the given paths prefixed with the base path where
+      the snapshots are mounted.
+
+    """
+    new_paths = list()
+    for path in paths:
+      new_path = '{snapshot_mount_point_base_path}{path}'.format(
+          snapshot_mount_point_base_path=self._snapshot_mount_point_base_path,
+          path=path)
+      new_paths.append(new_path)
+    return new_paths
+
   def _run_custom_workflow(self):
     """Run backup of LVM snapshots.
         
@@ -217,32 +236,17 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     on the snapshot itself.
 
     """
-    # TODO(jpwoodbu) Cooking the paths should be done in its own function.
     self.logger.debug('LVMBackup._run_custom_workflow started')
-
     # Cook the self._include_dirs and self._exclude_dirs so that the src paths
     # include the mount path for the logical volumes.
-    local_include_dirs = list()
-    for include_dir in self._include_dirs:
-      include_path = '{snapshot_mount_point_base_path}{include_dir}'.format(
-          snapshot_mount_point_base_path=self._snapshot_mount_point_base_path,
-          include_dir=include_dir)
-      local_include_dirs.append(include_path)
-
-    local_exclude_dirs = []
-    for exclude_dir in self._exclude_dirs:
-      exclude_path = '{snapshot_mount_point_base_path}{exclude_dir}'.format(
-          snapshot_mount_point_base_path=self._snapshot_mount_point_base_path,
-          exclude_dir=exclude_dir)
-      local_exclude_dirs.append(exclude_path)
-
-    self._include_dirs = local_include_dirs
-    self._exclude_dirs = local_exclude_dirs
+    self._include_dirs = self._prefix_mount_point_to_paths(self._include_dirs)
+    self._exclude_dirs = self._prefix_mount_point_to_paths(self._exclude_dirs)
 
     # We don't support include_file_list and exclude_file_list in this class as
     # it would take extra effort and it's not likely to be used.
 
-    # Have the base class perform an rdiff-backup.
+    # After changing the top-level src dir to where the snapshots are mounted,
+    # have the base class perform an rdiff-backup.
     self.top_level_src_dir = self._snapshot_mount_point_base_path
     super(RdiffLVMBackup, self)._run_custom_workflow()
 
