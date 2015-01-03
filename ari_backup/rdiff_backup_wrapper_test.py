@@ -264,7 +264,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
 class RdiffBackupCheckRequiredBinariesTest(
     test_lib.FlagSaverMixIn, unittest.TestCase):
-  """Class for testing  methods that were mocked out in RdiffBackupTest."""
+  """Class for testing methods that were mocked out in RdiffBackupTest."""
 
   @mock.patch.object(os, 'access')
   def testCheckRequiredBinaries_rdiffBackupNotInstalled_raisesException(
