@@ -1,9 +1,9 @@
 import copy
-import mock
 import os
 import unittest
 
 import gflags
+import mock
 
 import lvm
 import test_lib

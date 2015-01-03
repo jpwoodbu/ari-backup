@@ -1,8 +1,8 @@
 import os
-import mock
 import unittest
 
 import gflags
+import mock
 
 import rdiff_backup_wrapper
 import test_lib
