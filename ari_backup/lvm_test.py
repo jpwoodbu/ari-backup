@@ -47,20 +47,27 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
       self, mock_create_snapshots, mock_mount_snapshots, mock_umount_snapshots,
       mock_delete_snapshots):
     mock_command_runner = test_lib.GetMockCommandRunner()
+    mock_run_custom_workflow = mock.MagicMock()
     backup = FakeBackup(
         source_hostname='unused', label='unused', settings_path=None,
         command_runner=mock_command_runner)
+    backup._run_custom_workflow = mock_run_custom_workflow
+    # Attach mocks to manager mock so we can track their call order.
     manager_mock = mock.MagicMock()
     manager_mock.attach_mock(mock_create_snapshots, '_create_snapshots')
     manager_mock.attach_mock(mock_mount_snapshots, '_mount_snapshots')
     manager_mock.attach_mock(mock_umount_snapshots, '_umount_snapshots')
     manager_mock.attach_mock(mock_delete_snapshots, '_delete_snapshots')
+    manager_mock.attach_mock(mock_run_custom_workflow, '_run_custom_workflow')
+    # Create mock.call objects and defined their expected call order.
     create_snapshots_call = mock.call._create_snapshots()
     mount_snapshots_call = mock.call._mount_snapshots()
     umount_snapshots_call = mock.call._umount_snapshots(error_case=False)
     delete_snapshots_call = mock.call._delete_snapshots(error_case=False)
+    run_custom_workflow_call = mock.call._run_custom_workflow()
     expected_calls = [create_snapshots_call, mount_snapshots_call,
-                      umount_snapshots_call, delete_snapshots_call]
+                      run_custom_workflow_call, umount_snapshots_call,
+                      delete_snapshots_call]
 
     backup.add_volume('fake_volume_group/fake_volume1', '/unused')
     backup.run()
