@@ -1,5 +1,5 @@
 """ZFS based backup workflows."""
-from datetime import datetime, timedelta
+import datetime
 
 import gflags
 
@@ -66,9 +66,10 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
     """
     # Call our super class's constructor to enable LVM snapshot management
-    super(ZFSLVMBackup, self).__init__(label, source_hostname, None, **kwargs)
+    super(ZFSLVMBackup, self).__init__(label, **kwargs)
 
     # Assign instance vars specific to this class.
+    self.source_hostname = source_hostname
     self.rsync_dst = rsync_dst
     self.zfs_hostname = zfs_hostname
     self.dataset_name = dataset_name
@@ -84,6 +85,14 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     self.add_post_hook(self._destroy_expired_zfs_snapshots,
                        {'days': snapshot_expiration_days})
 
+  def _get_current_datetime(self):
+    """Returns datetime object with the current date and time.
+
+    This method is mostly useful for testing purposes.
+
+    """
+    return datetime.datetime.now()
+
   def _run_custom_workflow(self):
     """Run rsync backup of LVM snapshot to ZFS dataset."""
     # TODO(jpwoodbu) Consider throwing an exception if we see things in the
@@ -97,7 +106,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     # We add a trailing slash to the src path otherwise rsync will make a
     # subdirectory at the destination, even if the destination is already a
     # directory.
-    rsync_src = self.snapshot_mount_point_base_path + '/'
+    rsync_src = self._snapshot_mount_point_base_path + '/'
 
     command = '{rsync_path} {rsync_options} {src} {dst}'.format(
         rsync_path=self.rsync_path,
@@ -124,28 +133,42 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     """
     if not error_case:
       self.logger.info('creating ZFS snapshot...')
-      timestamp = datetime.now().strftime(self.zfs_snapshot_timestamp_format)
-      snapshot_name = self.snapshot_prefix + timestamp
+      timestamp = self._get_current_datetime().strftime(
+          self.zfs_snapshot_timestamp_format)
+      snapshot_name = self.zfs_snapshot_prefix + timestamp
       command = 'zfs snapshot {dataset_name}@{snapshot_name}'.format(
           dataset_name=self.dataset_name, snapshot_name=snapshot_name)
       self.run_command(command, self.zfs_hostname)
 
   def _find_snapshots_older_than(self, days):
-    expiration = datetime.now() - timedelta(days=days)
+    expiration = self._get_current_datetime() - datetime.timedelta(days=days)
     # Let's find all the snapshots for this dataset.
     command = 'zfs get -rH -o name,value type {dataset_name}'.format(
         dataset_name=self.dataset_name)
-    (stdout, stderr) = self.run_command(command, self.zfs_hostname)
+    (stdout, unused_stderr) = self.run_command(command, self.zfs_hostname)
 
-    snapshots = []
+    snapshots = list()
     # Sometimes we get extra lines which are empty, so we'll strip the lines.
     for line in stdout.strip().splitlines():
       name, dataset_type = line.split('\t')
       if dataset_type == 'snapshot':
         # Let's try to only consider destroying snapshots made by us ;)
-        if name.split('@')[1].startswith(self.snapshot_prefix):
+        if name.split('@')[1].startswith(self.zfs_snapshot_prefix):
             snapshots.append(name)
-    return snapshots
+
+    expired_snapshots = list()
+    for snapshot in snapshots:
+      creation_time = self._get_snapshot_creation_time(snapshot)
+      if creation_time <= expiration:
+        expired_snapshots.append(snapshot)
+
+    return expired_snapshots
+    
+  def _get_snapshot_creation_time(self, snapshot):
+    command = 'zfs get -H -o value creation {snapshot}'.format(
+        snapshot=snapshot)
+    stdout, unused_stderr = self.run_command(command, self.zfs_hostname)
+    return datetime.datetime.strptime(stdout.strip(), '%a %b %d %H:%M %Y')
 
   def _destroy_expired_zfs_snapshots(self, days, error_case):
     """Destroy snapshots older than the given numnber of days.
@@ -168,15 +191,10 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
       # Destroy expired snapshots.
       for snapshot in snapshots:
-        command = 'zfs get -H -o value creation {snapshot}'.format(
-            snapshot=snapshot)
-        (stdout, stderr) = self.run_command(command, self.zfs_hostname)
-        creation_time = datetime.strptime(stdout.strip(), '%a %b %d %H:%M %Y')
-        if creation_time <= expiration:
-          self.run_command('zfs destroy {snapshot}'.format(snapshot=snapshot),
-              self.zfs_hostname)
-          snapshots_destroyed = True
-          self.logger.info('{snapshot} destroyed'.format(snapshot=snapshot))
+        self.run_command('zfs destroy {snapshot}'.format(snapshot=snapshot),
+                         self.zfs_hostname)
+        snapshots_destroyed = True
+        self.logger.info('{snapshot} destroyed'.format(snapshot=snapshot))
 
       if not snapshots_destroyed:
         self.logger.info('found no expired ZFS snapshots')
