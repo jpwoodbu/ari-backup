@@ -102,7 +102,7 @@ class BaseWorkflow(object):
     FLAGS(sys.argv)
     # Setup logging.
     # TODO(jpwoodbu) Considering renaming the heading to this logging
-    # statement.
+    # statement since this is coming from a generic workflow class now.
     self.logger = Logger('ARIBackup ({label})'.format(label=label),
         FLAGS.debug, FLAGS.stderr_logging)
     self.label = label
@@ -110,7 +110,7 @@ class BaseWorkflow(object):
     # Assign flags to instance vars so they might be easily overridden in
     # workflow configs.
     self.dry_run = FLAGS.dry_run
-    self.max_tries = FLAGS.max_retries
+    self.max_retries = FLAGS.max_retries
     self.remote_user = FLAGS.remote_user
     self.ssh_path = FLAGS.ssh_path
 
@@ -128,23 +128,29 @@ class BaseWorkflow(object):
     else:
       self._command_runner = command_runner
       
-  def _load_settings(self):
-    """Loads user-defined settings."""
-    if self._settings_path is None:
-      return
-
+  def _get_settings_from_file(self):
+    """Returns settings stored as YAML in the configuration file as a dict."""
     settings = dict()
+    if self._settings_path is None:
+      return settings
     try:
-      with open(self._settings_path) as settings_file:
+      with open(self._settings_path, 'r') as settings_file:
         settings = yaml.load(settings_file)
     except IOError:
+      # We can't log anything yet because self.logger isn't set up yet.
       print ('Unable to load {} file. Continuing with default '
-             'settings.'.format(SETTINGS_PATH))
+             'settings.'.format(self._settings_path))
+    finally:
+      return settings
+
+  def _load_settings(self):
+    """Loads user-defined settings."""
+    settings = self._get_settings_from_file()
     for setting, value in settings.iteritems():
       try:
         FLAGS.SetDefault(setting, value)
       except AttributeError as e:
-        # We can't log anything yet because self.logger isn't set up.
+        # We can't log anything yet because self.logger isn't set up yet.
         print('WARNING: Skipping unknown setting in {}: {}'.format(
               SETTINGS_PATH, e))
 
@@ -310,7 +316,7 @@ class BaseWorkflow(object):
 
     # Add SSH arguments if this is a remote command.
     if host != 'localhost':
-      ssh_args = shlex.split('{ssh} {user}@%{host}'.format(
+      ssh_args = shlex.split('{ssh} {user}@{host}'.format(
           ssh=self.ssh_path, user=self.remote_user, host=host))
       args = ssh_args + args
 
@@ -351,16 +357,17 @@ class BaseWorkflow(object):
     """Alias for run_command() to provide backward compatibility."""
     self.logger.warning(
         '_run_command() is deprecated. Please use run_command().')
-    self.run_command(*args, **kwargs)
+    return self.run_command(*args, **kwargs)
 
-  def run_command_with_retries(self, command, host='localhost', try_number=0):
+  def run_command_with_retries(self, command, host='localhost', try_number=1):
     """Runs a command retrying on failure up to self.max_retries."""
     try:
-      self.run_command(command, host)
-    except Exception, e:
+      return self.run_command(command, host)
+    except Exception as e:
       if try_number > self.max_retries:
         raise e
-      self.run_command_with_retries(command, host, try_number + 1)
+      # TODO(jpwoodbu) Shouldn't there be a sleep between retries?
+      return self.run_command_with_retries(command, host, try_number + 1)
 
   def _run_custom_workflow(self):
     """Override this method to run the desired workflow."""
