@@ -236,7 +236,7 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     on the snapshot itself.
 
     """
-    self.logger.debug('LVMBackup._run_custom_workflow started')
+    self.logger.debug('RdiffLVMBackup._run_custom_workflow started')
     # Cook the self._include_dirs and self._exclude_dirs so that the src paths
     # include the mount path for the logical volumes.
     self._include_dirs = self._prefix_mount_point_to_paths(self._include_dirs)
@@ -250,4 +250,4 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     self.top_level_src_dir = self._snapshot_mount_point_base_path
     super(RdiffLVMBackup, self)._run_custom_workflow()
 
-    self.logger.debug('LVMBackup._run_custom_workflow completed')
+    self.logger.debug('RdiffLVMBackup._run_custom_workflow completed')
