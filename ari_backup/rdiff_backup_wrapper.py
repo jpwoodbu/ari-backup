@@ -70,8 +70,6 @@ class RdiffBackup(workflow.BaseWorkflow):
     self._exclude_dirs = list()
     self._exclude_files = list()
 
-    # Provide backward compatibility for config files using attributes
-    # directly.
     self.include_dir_list = self._include_dirs
     self.include_file_list = self._include_files
     self.exclude_dir_list = self._exclude_dirs
@@ -84,6 +82,39 @@ class RdiffBackup(workflow.BaseWorkflow):
       self.post_job_hook_list.append((
           self._remove_older_than,
           {'timespec': remove_older_than_timespec}))
+
+  # Provide backward compatibility for config files using attributes directly.
+  @property
+  def include_dir_list(self):
+    return self._include_dirs
+
+  @include_dir_list.setter
+  def include_dir_list(self, value):
+    self._include_dirs = value
+
+  @property
+  def include_file_list(self):
+    return self._include_files
+
+  @include_file_list.setter
+  def include_file_list(self, value):
+    self._include_files = value
+
+  @property
+  def exclude_dir_list(self):
+    return self._exclude_files
+
+  @exclude_dir_list.setter
+  def exclude_dir_list(self, value):
+    self._exclude_dirs = value
+
+  @property
+  def exclude_file_list(self):
+    return self._exclude_files
+
+  @exclude_file_list.setter
+  def exclude_file_list(self, value):
+    self._exclude_files = value
 
   def _check_required_flags(self):
     if self.backup_store_path is None:
@@ -167,19 +198,19 @@ class RdiffBackup(workflow.BaseWorkflow):
       arg_list.append('--ssh-no-compression')
 
     # Add exclude and includes to our arguments
-    for exclude_dir in self.exclude_dir_list:
+    for exclude_dir in self._exclude_dirs:
       arg_list.append('--exclude')
       arg_list.append(exclude_dir)
 
-    for exclude_file in self.exclude_file_list:
+    for exclude_file in self._exclude_files:
       arg_list.append('--exclude-filelist')
       arg_list.append(exclude_file)
 
-    for include_dir in self.include_dir_list:
+    for include_dir in self._include_dirs:
       arg_list.append('--include')
       arg_list.append(include_dir)
 
-    for include_file in self.include_file_list:
+    for include_file in self._include_files:
       arg_list.append('--include-filelist')
       arg_list.append(include_file)
 
