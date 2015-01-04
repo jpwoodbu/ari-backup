@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='ari-backup',
-    version='1.0.0',
+    version='1.0.1',
     license='BSD',
     packages=['ari_backup'],
     author='ari-backup team',
