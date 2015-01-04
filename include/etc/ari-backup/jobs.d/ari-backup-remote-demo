@@ -1,6 +1,7 @@
 #!/usr/bin/env python
-from ari_backup import ARIBackup
+import ari_backup
 
-backup = ARIBackup(label='mybackup', source_hostname='user-desktop')
-backup.include_dir_list.append('/home')
-backup.run_backup()
+backup = ari_backup.RdiffBackup(
+    label='mybackup', source_hostname='user-desktop')
+backup.include_dir('/home')
+backup.run()

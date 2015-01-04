@@ -1,13 +1,10 @@
 #!/usr/bin/env python
+import ari_backup
 
-from ari_backup import LVMBackup
+backup = ari_backup.RdiffLVMBackup(
+    label='mybackup', source_hostname='db-server',
+    remove_older_than_timespec='1M')
 
-backup = LVMBackup(
-    label='mybackup',
-    source_hostname='db-server',
-    remove_older_than_timespec='1M'
-)
-
-backup.lv_list.append(('vg0/root', '/'))
-backup.include_dir_list.append('/etc')
-backup.run_backup()
+backup.add_volume('vg0/root', '/')
+backup.include_dir('/etc')
+backup.run()
