@@ -101,9 +101,7 @@ class BaseWorkflow(object):
     # this is here in the BaseWorkflow constructor.
     FLAGS(sys.argv)
     # Setup logging.
-    # TODO(jpwoodbu) Considering renaming the heading to this logging
-    # statement since this is coming from a generic workflow class now.
-    self.logger = Logger('ARIBackup ({label})'.format(label=label),
+    self.logger = Logger('ari_backup ({label})'.format(label=label),
         FLAGS.debug, FLAGS.stderr_logging)
     self.label = label
 

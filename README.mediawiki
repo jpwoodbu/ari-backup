@@ -35,15 +35,16 @@ of its use on Windows using [http://www.cygwin.com/ cygwin].
 
 == Getting Started ==
 
-Before you install ari-backup, consider installing the following packages from
+Before you install ari-backup, you should install the following packages from
 your Linux distribution.
+* python-gflags
 * python-yaml
 * rdiff-backup
 
 ari-backup requires [http://pyyaml.org/ PyYAML] which is not a pure Python
 library, so you may prefer providing that dependency with a system package. In
 almost all cases, you'll need rdiff-backup installed to do anything meaningful
-with ari-backup.  It is also recommended that you also install '''ssh''' if
+with ari-backup. It is also recommended that you also install '''ssh''' if
 you somehow don't already have it.
 
 To install the ari_backup package to your system, run this as '''root''':
@@ -51,7 +52,7 @@ To install the ari_backup package to your system, run this as '''root''':
 pip install git+git://github.com/jpwoodbu/ari-backup.git
 </pre>
 
-Before you can execute a backup job there are a few files and directories that
+Before you can execute a backup job, there are a few files and directories that
 need to be setup. At this time, the configuration file for ari-backup is
 always read from ''/etc/ari-backup/ari-backup.conf.yaml''. For this demo put
 this into the ''ari-backup.conf.yaml'' file:
@@ -60,32 +61,47 @@ backup_store_path: /backup-store
 </pre>
 Now create the ''/backup-store'' directory.
 
-Our demo will use the most basic example of a backup job. Our job will backup
-our ''/music'' directory to ''/backup-store/my_backup''. Put the following into
-a file named ''ari-backup-local-demo'':
+Our demo will use the most basic example of a backup job. Our backup job will
+backup our ''/music'' directory to ''/backup-store/my_backup''. Put the
+following into a file named ''ari-backup-local-demo'':
 <pre>
 #!/usr/bin/env python
-from ari_backup import ARIBackup
+import ari_backup
 
-backup = ARIBackup(label='my_backup', source_hostname='localhost')
-backup.include_dir_list.append('/music')
-backup.run_backup()
+backup = ari_backup.RdiffBackup(label='my_backup', source_hostname='localhost')
+backup.include_dir('/music')
+backup.run()
 </pre>
 
-Make ''ari-backup-local-demo'' executable and run it. Make sure the user you're
-using to execute this script has the permission to read the
-''/etc/ari-backup/ari-backup.conf.yaml'' file, to read the ''/music'' directory
-and has permission to write to the ''/backup-store/my_backup'' directory. If
-all goes well, you should see no output to the console. But take a look at your
-syslog and you might see lines like this:
+Make sure you're logged in as a user with permission to read the
+''/etc/ari-backup/ari-backup.conf.yaml'' file. Make ''ari-backup-local-demo''
+executable and run it with some debug flags.
 <pre>
-Nov 17 23:21:56 morbo ARIBackup (my_backup) [INFO] started
-Nov 17 23:21:56 morbo ARIBackup (my_backup) [INFO] processing pre-job hooks...
-Nov 17 23:21:56 morbo ARIBackup (my_backup) [INFO] data backup started...
-Nov 17 23:21:59 morbo ARIBackup (my_backup) [INFO] data backup complete
-Nov 17 23:21:59 morbo ARIBackup (my_backup) [INFO] processing post-job hooks...
-Nov 17 23:21:59 morbo ARIBackup (my_backup) [INFO] stopped
+$ ./ari-backup-local-demo --debug --dry_run
 </pre>
+The ouputput should look something like this:
+<pre>
+ari_backup (my_backup) [INFO] workflow.py:392 Running in dry_run mode.
+ari_backup (my_backup) [INFO] workflow.py:393 started                          
+ari_backup (my_backup) [INFO] workflow.py:254 processing pre-job hooks...      
+ari_backup (my_backup) [INFO] workflow.py:396 data backup started...           
+ari_backup (my_backup) [DEBUG] rdiff_backup_wrapper.py:152 _run_custom_workflow started
+ari_backup (my_backup) [DEBUG] workflow.py:321 run_command ['/usr/bin/rdiff-backup', '--exclude-device-files', '--exclude-fifos', '--exclude-sockets', '--terminal-verbosity', '1', '--include', '/music', '--exclude', '**', '/', '/srv/backup-store/my_backup']
+ari_backup (my_backup) [DEBUG] rdiff_backup_wrapper.py:205 _run_backup completed
+ari_backup (my_backup) [INFO] workflow.py:398 data backup complete
+ari_backup (my_backup) [INFO] workflow.py:283 processing post-job hooks...     
+ari_backup (my_backup) [INFO] workflow.py:411 stopped
+</pre>
+You'll notice similar output in your syslog as all ari_backup are logged there
+too. For all the available flags to ari_backup job files use the --help flag.
+<pre>
+$ ./ari-backup-local-demo --help
+</pre>
+
+Now let's run the demo for real. Make sure the user you're logged in as also
+has permission to read the ''/music'' directory and has permission to write to
+the ''/backup-store/my_backup'' directory. If all goes well, you should see no
+output to the console but you can find logging in your syslog.
 
 Your ''/backup-store'' directory should now have a ''my_backup'' directory.
 And inside that directory you should see a mirror of your ''/music/'' directory
@@ -121,14 +137,19 @@ Let's assume that your remote host is named kif. Make a new backup job file
 named ''ari-backup-remote-demo'' with this content:
 <pre>
 #!/usr/bin/env python
-from ari_backup import ARIBackup
+import ari_backup
 
-backup = ARIBackup(label='kif_backup', source_hostname='kif')
-backup.include_dir_list.append('/music')
-backup.run_backup()
+backup = ari_backup.RdiffBackup(label='kif_backup', source_hostname='kif')
+backup.include_dir('/music')
+backup.run()
 </pre>
 
-Make ''ari-backup-remote-demo'' executable and run it. Again, no output to the
+Make ''ari-backup-remote-demo'' executable and run it first with the debug
+flags to see what it will be doing.
+<pre>
+$ ./ari-backup-remote-demo --debug --dry_run
+</pre>
+If everything looks good, run it without any flags. Again, no output to the
 console means everthing worked. Check the syslog and your
 ''/backup-store/kif_backup'' directory to see the results. Once you've got
 your ssh keys setup, the only thing different about remote backups is the
@@ -172,50 +193,49 @@ more on their filename restrictions.
 '''Pro tip:''' since run-parts will ignore file names with dots, a simple way
 to disable a backup job is to prefix a dot to its filename.
 
-== Extensions ==
+== Other modules ==
 
-=== LVMBackup ===
+=== lvm ===
 
 Let's add LVM into the mix so that we can achieve crash-consistent backups.
-This is done using the LVMBackup extension.  We'll need to add the
-snapshot_mount_root and snapshot_suffix settings to our existing
+This is done using the lvm module.  We'll need to add the
+'''snapshot_mount_root''' and '''snapshot_suffix''' settings to our existing
 ''/etc/ari-backup/ari-backup.conf.yaml'' file:
 <pre>
 snapshot_mount_root: /tmp
 snapshot_suffix: -ari-backup
 </pre>
+'''snapshot_mount_root''' defines where the temporary snapshots are mounted
+during the backup (snapshots are automatically removed after the backup is
+completed). '''snapshot_suffix''' determines the suffix of the name of the
+snapshot. This is useful when debugging so that it's clear where the snapshot
+came from.
 
-snapshot_mount_root defines where the temporary snapshots are mounted during
-the backup (snapshots are automatically removed after the backup is completed).
-snapshot_suffix determines the suffix of the name of the snapshot.  This is
-useful when debugging so that it's clear where the snapshot came from.
-
-Let's assume that your remote host is named db-server.  You want rdiff-backup
+Let's assume that your remote host is named db-server. You want rdiff-backup
 to remove increments older than one month, so you set
-remove_older_than_timespec='1M'.  You specify the LVM volumes and their
+remove_older_than_timespec='1M'. You specify the LVM volumes and their
 mountpoints on the remote system (you may add more than one LVM volume by
-adding multiple backup.lv_list.append statements).  Finally, specify the
-directories to be backed up with backup.include_dir_list.append.  Make a new
-backup job file named ''ari-backup-remote-lvm-demo'' with this content:
+adding multiple backup.add_volume() statements). Finally, specify the
+directories to be backed up with backup.include_dir().  Make a new backup job
+file named ''ari-backup-remote-lvm-demo'' with this content:
 <pre>
 #!/usr/bin/env python
+import ari_backup
 
-from ari_backup import LVMBackup
-
-backup = LVMBackup(
+backup = ari_backup.RdiffLVMBackup(
     label='mybackup',
     source_hostname='db-server',
     remove_older_than_timespec='1M'
 )
 
-backup.lv_list.append(('vg0/root', '/'))
-backup.include_dir_list.append('/etc')
-backup.run_backup()
+backup.add_volume('vg0/root', '/')
+backup.include_dir('/etc')
+backup.run()
 </pre>
 
-=== ZFSLVMBackup ===
+=== zfs ===
 
-TODO write up examples of how to use the ZFSLVMBackup extension.
+TODO(jpwoodbu) Write up examples of how to use the ZFSLVMBackup extension.
 
 == History and Namesake ==
 
