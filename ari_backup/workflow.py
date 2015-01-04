@@ -68,7 +68,7 @@ class CommandRunner(object):
     except IOError:
       raise CommandNotFound('Unable to execute/find {}'.format(args))
 
-    stdout, stderr = self.process.communicate()
+    stdout, stderr = self._process.communicate()
     return stdout, stderr, self._process.returncode
 
   def terminate(self):
