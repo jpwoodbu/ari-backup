@@ -1,7 +1,8 @@
+"""Logging configuration for ari_backup package."""
 import logging
+import logging.handlers
 import sys
 
-from logging.handlers import SysLogHandler
 
 class Logger(logging.Logger):
   """Subclass of the normal logger, to set up desired logging behavior.
@@ -12,12 +13,12 @@ class Logger(logging.Logger):
 
   """ 
   def __init__(self, name, debug=False, stderr_logging=True):
-    """
-    args:
-    name -- name passed to logging.Logger
+    """Initilizes Logger.
 
-    kwargs:
-    debug -- bool to enable debug logging
+    Args:
+      name: str, name passed to logging.Logger.
+      debug: bool, whether to enable debug logging. Defaults to False.
+      stderr_logging: bool, whether to log to stderr. Defaults to True.
 
     """
     logging.Logger.__init__(self, name)
@@ -41,7 +42,7 @@ class Logger(logging.Logger):
       self.addHandler(stream_handler)
 
     # Emit to syslog, INFO and above, or DEBUG if debug.
-    syslog_handler = SysLogHandler('/dev/log')
+    syslog_handler = logging.handlers.SysLogHandler('/dev/log')
     if debug:
         syslog_handler.setLevel(logging.DEBUG)
     else:

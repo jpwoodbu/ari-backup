@@ -44,15 +44,14 @@ class RdiffBackup(workflow.BaseWorkflow):
                remove_older_than_timespec=None, **kwargs):
     """Configure an RdiffBackup object.
 
-    args:
-    label -- a str to label the backup job 
-    source_hostname -- the name of the host with the source data to backup
-
-    kwargs:
-    remove_older_than_timespec -- a string representing the maximum age of
-        a backup recovery point (uses the same format as the
-        --remove-older-than argument for rdiff-backup)
-
+    Args:
+      label: str, label for the backup job.
+      source_hostname: str, the name of the host with the source data to
+        backup.
+      remove_older_than_timespec: str or None, the maximum age of a backup
+        recovery point (uses the same format as the --remove-older-than argument
+        for rdiff-backup). Defaults to None which will skip removing any
+        historical recovery points.
     """
     super(RdiffBackup, self).__init__(label, **kwargs)
     self.source_hostname = source_hostname
@@ -131,9 +130,8 @@ class RdiffBackup(workflow.BaseWorkflow):
     The provided path is added to the top_level_src_dir when considering
     whether files should be included in the backup.
 
-    args:
-    path -- directory path to include in the backup
-
+    Args:
+      path: str, directory path to include in the backup.
     """
     self._include_dirs.append(path)
 
@@ -143,9 +141,8 @@ class RdiffBackup(workflow.BaseWorkflow):
     The provided path is added to the top_level_src_dir when considering
     whether files should be included in the backup.
 
-    args:
-    path -- file path to include in the backup
-
+    Args:
+      path: str, file path to include in the backup.
     """
     self._include_files.append(path)
 
@@ -155,9 +152,8 @@ class RdiffBackup(workflow.BaseWorkflow):
     The provided path is added to the top_level_src_dir when considering
     whether files should be included in the backup.
 
-    args:
-    path -- directory path to exclude in the backup
-
+    Args:
+      path: str, directory path to exclude from the backup.
     """
     self._exclude_dirs.append(path)
 
@@ -167,9 +163,8 @@ class RdiffBackup(workflow.BaseWorkflow):
     The provided path is added to the top_level_src_dir when considering
     whether files should be included in the backup.
 
-    args:
-    path -- file path to exclude in the backup
-
+    Args:
+      path: str, file path to exclude from the backup.
     """
     self._exclude_files.append(path)
 
@@ -178,7 +173,6 @@ class RdiffBackup(workflow.BaseWorkflow):
 
     Builds an argument list for a full rdiff-backup command line based on the
     configuration in the RdiffBackup instance.
-
     """ 
     self.logger.debug('_run_custom_workflow started')
     # Init our arguments list with the path to rdiff-backup.
@@ -238,16 +232,15 @@ class RdiffBackup(workflow.BaseWorkflow):
   def _remove_older_than(self, timespec, error_case):
     """Trims increments older than timespec.
 
-    args:
-    timespec -- a string representing the maximum age of
-      a backup datapoint (uses the same format as the --remove-older-than
-      argument for rdiff-backup [e.g. 30D, 10W, 6M])
-    error_case -- bool indicating if we're being called after a failure
-
     Post-job hook that uses rdiff-backup's --remove-older-than feature to
     trim old increments from the backup history. This method does nothing
     when error_case is True.
 
+    Args:
+      timespec: str, the maximum age of a backup datapoint (uses the same
+        format as the --remove-older-than argument for rdiff-backup [e.g. 30D,
+        10W, 6M]).
+      error_case: bool, whether an error has occurred during the backup.
     """ 
     if not error_case:
       self.logger.info('remove_older_than %s started' % timespec)

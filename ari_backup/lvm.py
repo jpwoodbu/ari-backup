@@ -58,23 +58,23 @@ class LVMSourceMixIn(object):
   def add_volume(self, name, mount_point, mount_options=None):
     """Adds logical volume to list of volumes to be backed up.
 
-    args:
-    name -- full logical volume path (with volume group) in group/volume_name
-      format.
-    mount_point -- path where the volume should be mounted during the backup.
-      This is normally the same path where the volume is normally mounted. For
-      example, if the volume is normally mounted at /var/www, the value passed
-      here should be /var/www if you want this data to be in the /var/www
-      directory in the backup
-    mount_options -- a str of mount options to be applied when mounting the
-      snapshot. For example, "noatime,ro".
-
+    Args:
+      name: str, full logical volume path (with volume group) in
+        group/volume_name format.
+      mount_point: str, path where the volume should be mounted during the
+        backup. This is normally the same path where the volume is normally
+        mounted. For example, if the volume is normally mounted at /var/www,
+        the value passed here should be /var/www if you want this data to be in
+        the /var/www directory in the backup.
+      mount_options: str or None, mount options to be applied when mounting the
+        snapshot. For example, "noatime,ro". Defaults to None which applies no
+        mount options.
     """
     volume = (name, mount_point, mount_options)
     self._logical_volumes.append(volume)
 
   def _create_snapshots(self):
-    """Creates snapshots of all the volumns listed in self.lv_list."""
+    """Creates snapshots of all the volumns added with add_volume()."""
     self.logger.info('creating LVM snapshots...')
     for volume in self._logical_volumes:
       # TODO(jpwoodbu) This try/except won't ne necessary when the deprecated
@@ -107,13 +107,12 @@ class LVMSourceMixIn(object):
       })
 
   def _delete_snapshots(self, error_case=None):
-    """Deletes snapshots in self._lv_snapshots.
+    """Deletes tracked snapshots.
 
-    kwargs:
-    error_case -- bool indicating if we're being called after a failure
-
-    This method behaves the same in the normal and error cases.
-
+    Args:
+      error_case: bool or None, whether an error has occurred during the
+        backup. Default is None. This method does not use this arg but must
+        accept it as part of the post hook API.
     """ 
     self.logger.info('deleting LVM snapshots...')
     for snapshot in self._lv_snapshots:
@@ -133,7 +132,6 @@ class LVMSourceMixIn(object):
     snapshots to try to umount.
 
     TODO(jpwoodbu) Add mount_options to documentation for backup config files.
-
     """
     self.logger.info('mounting LVM snapshots...')
     for snapshot in self._lv_snapshots:
@@ -170,11 +168,10 @@ class LVMSourceMixIn(object):
   def _umount_snapshots(self, error_case=None):
     """Umounts mounted snapshots in self._lv_snapshots.
 
-    kwargs:
-    error_case -- bool indicating if we're being called after a failure
-
-    This method behaves the same in the normal and error cases.
-
+    Args:
+      error_case: bool or None, whether an error has occurred during the
+        backup. Default is None. This method does not use this arg but must
+        accept it as part of the post hook API.
     """ 
     # TODO(jpwoodbu) If the user doesn't put '/' in their _include_dirs,
     # then we'll end up with directories around where the snapshots are mounted
@@ -216,7 +213,6 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     Returns:
       List of strings with the given paths prefixed with the base path where
       the snapshots are mounted.
-
     """
     new_paths = list()
     for path in paths:
@@ -234,7 +230,6 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     _snapshot_mount_point_base_path prefixed to their paths. This allows the
     user to configure what to backup from the perspective of the file system
     on the snapshot itself.
-
     """
     self.logger.debug('RdiffLVMBackup._run_custom_workflow started')
     # Cook the self._include_dirs and self._exclude_dirs so that the src paths

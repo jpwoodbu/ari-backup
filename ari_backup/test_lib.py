@@ -17,9 +17,7 @@ class FlagSaverMixIn(object):
   This class can be subclasses by test classes to permit tests to safely modify
   the values of gflags. The original value will be restored after the test
   completes.
-
   """
-
   def setUp(self):
     super(FlagSaverMixIn, self).setUp()
     self._save_flags()

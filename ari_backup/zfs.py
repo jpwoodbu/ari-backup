@@ -42,28 +42,26 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
   New post-job hooks are added for creating ZFS snapshots and trimming old
   ones. 
-  
   """
   def __init__(self, label, source_hostname, rsync_dst, zfs_hostname,
                dataset_name, snapshot_expiration_days, **kwargs):
     """Configure a ZFSLVMBackup object.
 
-    args:
-    label -- a str to label the backup job  (e.g. database-server1)
-    source_hostname -- the name of the host with the source data to backup
-    rsync_dst -- a str to use as the destination argument for the rsync
-        command line (e.g. backupbox:/backup-store/database-server1)
-    zfs_hostname -- the name of the backup destination host where we will 
-        be managing the ZFS snapshots
-    dataset_name -- the full ZFS path (not file system path) to the dataset
-        holding the backups for this job
-        (e.g. tank/backup-store/database-server1)
-    snapshot_expiration_days -- an int representing the maxmium age of a
-        ZFS snapshot in days
+    Args:
+      label: str, label for the backup job (e.g. database-server1).
+      source_hostname: str, the name of the host with the source data to
+        backup.
+      rsync_dst: str, the destination argument for the rsync command line
+          (e.g. backupbox:/backup-store/database-server1).
+      zfs_hostname: str, the name of the backup destination host where we will 
+          be managing the ZFS snapshots.
+      dataset_name: str, the full ZFS path (not file system path) to the
+        dataset holding the backups for this job
+        (e.g. tank/backup-store/database-server1).
+      snapshot_expiration_days: int, the maxmium age of a ZFS snapshot in days.
 
     Pro tip: It's a good practice to reuse the label argument as the last 
     path component in the rsync_dst and dataset_name arguments. 
-
     """
     # Call our super class's constructor to enable LVM snapshot management
     super(ZFSLVMBackup, self).__init__(label, **kwargs)
@@ -89,7 +87,6 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     """Returns datetime object with the current date and time.
 
     This method is mostly useful for testing purposes.
-
     """
     return datetime.datetime.now()
 
@@ -120,9 +117,6 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
   def _create_zfs_snapshot(self, error_case):
     """Creates a new ZFS snapshot of our destination dataset.
         
-    args:
-    error_case -- bool indicating if we're being called after a failure
-
     The name of the snapshot will include the zfs_snapshot_prefix provided by
     FLAGS and a timestamp. The zfs_snapshot_prefix is used by
     _remove_zfs_snapshots_older_than() when deciding which snapshots to
@@ -130,6 +124,10 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     convenience. The creation metadata on the ZFS snapshot is what is used to
     determine a snapshot's age.
 
+    This method does nothing if error_case is True.
+
+    Args:
+      error_case: bool, whether an error has occurred during the backup.
     """
     if not error_case:
       self.logger.info('creating ZFS snapshot...')
@@ -141,6 +139,18 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
       self.run_command(command, self.zfs_hostname)
 
   def _find_snapshots_older_than(self, days):
+    """Returns snapshots older than the given number of days.
+  
+    Only snapshots that meet the following criteria are returned:
+      1. They were created at least "days" ago.
+      2. Their name is prefixed with FLAGS.zfs_snapshot_prefix.
+
+    Args:
+      days: int, the minimum age of the snapshots in days.
+
+    Returns:
+      A list of filtered snapshots.
+    """
     expiration = self._get_current_datetime() - datetime.timedelta(days=days)
     # Let's find all the snapshots for this dataset.
     command = 'zfs get -rH -o name,value type {dataset_name}'.format(
@@ -165,6 +175,14 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     return expired_snapshots
     
   def _get_snapshot_creation_time(self, snapshot):
+    """Gets the creation time of a snapshot as a Python datetime object
+      
+    Args:
+      snapshot: str, the fule ZFS path to the snapshot.
+
+    Returns:
+      A datetime object representing the creation time of the snapshot.
+    """
     command = 'zfs get -H -o value creation {snapshot}'.format(
         snapshot=snapshot)
     stdout, unused_stderr = self.run_command(command, self.zfs_hostname)
@@ -173,15 +191,16 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
   def _destroy_expired_zfs_snapshots(self, days, error_case):
     """Destroy snapshots older than the given numnber of days.
 
-    args:
-    days -- int describing the max age of a snapshot in days
-    error_case -- bool indicating if we're being called after a failure
+    Any snapshots in the target dataset with a name that starts with
+    FLAGS.zfs_snapshot_prefix and a creation date older than days will be
+    destroyed. Depending on the size of the snapshots and the performance of
+    the disk subsystem, this operation could take a while.
 
-    Any snapshots in the target dataset with a name that starts with the
-    zfs_snapshot_prefix setting and a creation date older than days will be
-    destroyed. Depending on the size of the snapshots and the performance
-    of the disk subsystem, this operation could take a while.
+    This method does nothing if error_case is True.
 
+    Args:
+      days: int, the max age of a snapshot in days.
+      error_case: bool, whether an error has occurred during the backup.
     """
     if not error_case:
       self.logger.info('looking for expired ZFS snapshots...')

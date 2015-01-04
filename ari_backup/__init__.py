@@ -1,7 +1,13 @@
-from lvm import RdiffLVMBackup
-from rdiff_backup_wrapper import RdiffBackup
-from zfs import ZFSLVMBackup
+"""Initialize the ari_backup package."""
+import lvm
+import rdiff_backup_wrapper
+import zfs
 
+
+# Put the main backup classes in this namespace for convenience.
+RdiffBackup = rdiff_backup_wrapper.RdiffBackup
+RdiffLVMBackup = lvm.RdiffLVMBackup
+ZFSLVMBackup = zfs.ZFSLVMBackup
 
 # Continue to provide old names for backward compatiblity.
 ARIBackup = RdiffBackup

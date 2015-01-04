@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+"""Setup script for ari_backup package."""
 
-from setuptools import setup
+import setuptools
 
-setup(
+setuptools.setup(
     name='ari-backup',
     version='1.0.1',
     license='BSD',

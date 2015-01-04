@@ -8,9 +8,7 @@ xargs. The base features include:
 * ability to run arbitrary commands locally or remotely before and/or after
   jobs
 * logging to syslog
-
 """
-from __future__ import with_statement
 import subprocess
 import shlex
 import sys
@@ -50,16 +48,15 @@ class CommandRunner(object):
   def run(self, args):
     """Runs a command as a subprocess.
 
-    args:
-    args -- list of command line arguments to be executed.
+    Args:
+      args: list, command line arguments to be executed.
 
-    returns:
-    A 3-tuple containing a str with the stdout, a str with the stderr, and an
-    int with the return code of the executed process.
+    Returns:
+      A 3-tuple containing a str with the stdout, a str with the stderr, and an
+      int with the return code of the executed process.
 
-    raises:
-    CommandNotFound -- when the excutable is not found on the file system.
-
+    Raises:
+      CommandNotFound: when the excutable is not found on the file system.
     """
     try:
       self._process = subprocess.Popen(args, stdin=subprocess.PIPE,
@@ -84,14 +81,13 @@ class BaseWorkflow(object):
   def __init__(self, label, settings_path=SETTINGS_PATH, command_runner=None):
     """Configure a workflow object.
 
-    args:
-    label -- a str to label the backup job 
-    settings_path -- a str or None which is the path to the global settingsi
-      file. If None, then loading global settings is skipped.
-    command_runner -- An instantiated object that provides the CommandRunner
-      interface or None. If None, the CommandRunner class will be used by
-      default. 
-
+    Args:
+      label: str, label for the the backup job.
+      settings_path: str or None, the path to the global settings file. If
+        None, then loading global settings is skipped.
+      command_runner: CommandRunner, an instantiated object that provides the
+        CommandRunner interface or None. If None, the CommandRunner class will
+        be used by default. 
     """
     self._settings_path = settings_path
     # Override default flag values from user provided settings file.
@@ -116,16 +112,29 @@ class BaseWorkflow(object):
     self._pre_job_hooks = list()
     self._post_job_hooks = list()
 
-    # Maintain backward compatibility with old hooks interface.
-    self.pre_job_hook_list = self._pre_job_hooks
-    self.post_job_hook_list = self._post_job_hooks
-
     # Initialize the command runner object.
     if command_runner is None:
       self._command_runner = CommandRunner()
     else:
       self._command_runner = command_runner
       
+  # Maintain backward compatibility with old hooks interface.
+  @property
+  def pre_job_hook_list(self):
+    return self._pre_job_hooks
+
+  @pre_job_hook_list.setter
+  def pre_job_hook_list(self, value):
+    self._pre_job_hook = value
+
+  @property
+  def post_job_hook_list(self):
+    return self._post_job_hooks
+
+  @post_job_hook_list.setter
+  def post_job_hook_list(self, value):
+    self._post_job_hook = value
+
   def _get_settings_from_file(self):
     """Returns settings stored as YAML in the configuration file as a dict."""
     settings = dict()
@@ -155,17 +164,14 @@ class BaseWorkflow(object):
   def add_pre_hook(self, function, kwargs=None):
     """Adds a funtion to the list of hooks run before the main workflow.
 
-    args:
-    function -- callable to be called when hook is run
-
-    kwargs:
-    kwargs -- dictionary of key word arguments to pass to function
-
+    Args:
+      function: callable, called when hook is run.
+      kwargs: dict or None, key word arguments to pass to function. Default is
+        None. If None, an empty dict is used.
     """
     if kwargs is None:
       kwargs = dict()
     self._pre_job_hooks.append((function, kwargs))
-
 
   def insert_pre_hook(self, index, function, kwargs=None):
     """Inserts a funtion to the list of hooks run before the main workflow.
@@ -175,13 +181,11 @@ class BaseWorkflow(object):
     insert a hook at any position, but it can be difficult to know what other
     hooks have been inserted by the workflow class being used.
 
-    args:
-    index -- an int for the positional index at which the hook will be inserted
-    function -- callable to be called when hook is run
-
-    kwargs:
-    kwargs -- dictionary of key word arguments to pass to function
-
+    Args:
+      index: int, the positional index at which the hook will be inserted.
+      function: callable, called when hook is run.
+      kwargs: dict or None, key word arguments to pass to function. Default is
+        None. If None, an empty dict is used.
     """
     if kwargs is None:
       kwargs = dict()
@@ -190,22 +194,18 @@ class BaseWorkflow(object):
   def delete_pre_hook(self, index):
     """Removes, by index number, a hook run before the main workflow.
 
-    args:
-    index -- an int for the positional index at which the hook resides.
-
+    Args:
+      index: int, the positional index at which the hook will be deleted.
     """
     self._pre_job_hooks.pop(index)
-
 
   def add_post_hook(self, function, kwargs=None):
     """Adds a funtion to the list of hooks run after the main workflow.
 
-    args:
-    function -- callable to be called when hook is run
-
-    kwargs:
-    kwargs -- dictionary of key word arguments to pass to function
-
+    Args:
+      function: callable, called when hook is run.
+      kwargs: dict or None, key word arguments to pass to function. Default is
+        None. If None, an empty dict is used.
     """
     if kwargs is None:
       kwargs = dict()
@@ -220,13 +220,11 @@ class BaseWorkflow(object):
     insert a hook at any position, but it can be difficult to know what other
     hooks have been inserted by the workflow class being used.
 
-    args:
-    index -- an int for the positional index at which the hook will be inserted
-    function -- callable to be called when hook is run
-
-    kwargs:
-    kwargs -- dictionary of key word arguments to pass to function
-
+    Args:
+      index: int, the positional index at which the hook will be inserted.
+      function: callable, called when hook is run.
+      kwargs: dict or None, key word arguments to pass to function. Default is
+        None. If None, an empty dict is used.
     """
     if kwargs is None:
       kwargs = dict()
@@ -235,24 +233,15 @@ class BaseWorkflow(object):
   def delete_post_hook(self, index):
     """Removes, by index number, a hook run after the main workflow.
 
-    args:
-    index -- an int for the positional index at which the hook resides.
-
+    Args:
+      index: int, the positional index at which the hook will be deleted.
     """
     self._post_job_hooks.pop(index)
 
   def _process_pre_job_hooks(self):
-    """Executes pre-job hook functions.
-
-    The self.pre_job_hook_list is a list of tuples, each with two
-    elements, the first of which is a reference to a hook function, the
-    second is a dictionary of keyword arguments to pass to the hook
-    function. We loop over this list and call each pre-job hook function
-    with its corresponding arguments.
-
-    """ 
+    """Executes pre-job hook functions.""" 
     self.logger.info('processing pre-job hooks...')
-    for task in self.pre_job_hook_list:
+    for task in self._pre_job_hooks:
       # Let's do some assignments for readability.
       hook = task[0]
       kwargs = task[1]
@@ -260,10 +249,6 @@ class BaseWorkflow(object):
 
   def _process_post_job_hooks(self, error_case):
     """Executes post-job hook functions.
-
-    args:
-    error_case -- bool indicating if an error occured in pre-job hooks or
-        in run()
 
     This method works almost identically to _process_pre_job_hooks(), with
     the additional functionality of handling error cases, usually used to
@@ -276,6 +261,9 @@ class BaseWorkflow(object):
     operation when error_case is True to avoid reducing the number of recovery
     points in the backup history.
 
+    Args:
+      error_case: bool or None, whether an error has occurred during the
+        backup.
     """
     if error_case:
       self.logger.error('processing post-job hooks for error case...')
@@ -292,17 +280,13 @@ class BaseWorkflow(object):
   def run_command(self, command, host='localhost'):
     """Runs an arbitrary command on a given host.
 
-    args:
-    command -- str or list representing a command line
+    Given a command line, attempt to execute it on the host named in the host
+    argument via SSH, or locally if host is "localhost".
 
-    kwargs:
-    host -- hostname for the host on which the command will be executed
-
-    Given the command argument, which can be either a command line string
-    or a list of command line arguments, we attempt to execute it on the
-    host named in the host argument via SSH, or locally if host is
-    "localhost".
-
+    Args:
+      command: str or list, a command line or list of command line arguments to
+        run.
+      host: str, the host on which the command will be executed.
     """
     # make args a list if it's not already so
     if isinstance(command, basestring):
