@@ -27,7 +27,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     self.mock_check_required_binaries.stop()
 
   @mock.patch.object(rdiff_backup_wrapper.RdiffBackup, '_remove_older_than')
-  def testRemoveOlderThanTimespecIsNone_backupsNotTrimmed(
+  def testRemoveOlderThan_timespecIsNone_backupsNotTrimmed(
       self, mock_remove_older_than):
     mock_command_runner = test_lib.GetMockCommandRunner()
     backup = rdiff_backup_wrapper.RdiffBackup(
@@ -40,7 +40,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     self.assertFalse(mock_remove_older_than.called)
 
-  def testRemoveOlderThanTimespecGiven_backupsTrimmed(self):
+  def testRemoveOlderThan_timespecIsNotNone_backupsTrimmed(self):
     FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
     FLAGS.backup_store_path = '/fake/backup-store'
     mock_command_runner = test_lib.GetMockCommandRunner()
