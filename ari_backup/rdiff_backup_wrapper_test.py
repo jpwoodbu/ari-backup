@@ -12,19 +12,16 @@ FLAGS = gflags.FLAGS
 # Disable logging to stderr when running tests.
 FLAGS.stderr_logging = False
 
-
 class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
   
   def setUp(self):
     super(RdiffBackupTest, self).setUp()
     FLAGS.backup_store_path = '/unused'
     FLAGS.rdiff_backup_options = str()
-    self.mock_check_required_binaries = mock.patch.object(
-        rdiff_backup_wrapper.RdiffBackup, '_check_required_binaries').start()
-
-  def tearDown(self):
-    super(RdiffBackupTest, self).tearDown()
-    self.mock_check_required_binaries.stop()
+    patcher = mock.patch.object(
+        rdiff_backup_wrapper.RdiffBackup, '_check_required_binaries')
+    self.addCleanup(patcher.stop)
+    patcher.start()
 
   @mock.patch.object(rdiff_backup_wrapper.RdiffBackup, '_remove_older_than')
   def testRemoveOlderThan_timespecIsNone_backupsNotTrimmed(
@@ -262,7 +259,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         '/fake_dir', '--exclude', '**', '/', '/fake/backup-store/fake_backup'])
 
 
-class RdiffBackupCheckRequiredBinariesTest(
+class ZRdiffBackupCheckRequiredBinariesTest(
     test_lib.FlagSaverMixIn, unittest.TestCase):
   """Class for testing methods that were mocked out in RdiffBackupTest."""
 
