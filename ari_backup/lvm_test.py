@@ -36,19 +36,18 @@ class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
 class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
+  @mock.patch.object(FakeBackup, '_run_custom_workflow')
   @mock.patch.object(lvm.LVMSourceMixIn, '_delete_snapshots')
   @mock.patch.object(lvm.LVMSourceMixIn, '_umount_snapshots')
   @mock.patch.object(lvm.LVMSourceMixIn, '_mount_snapshots')
   @mock.patch.object(lvm.LVMSourceMixIn, '_create_snapshots')
   def testWorkflowRunsInCorrectOrder(
       self, mock_create_snapshots, mock_mount_snapshots, mock_umount_snapshots,
-      mock_delete_snapshots):
+      mock_delete_snapshots, mock_run_custom_workflow):
     mock_command_runner = test_lib.GetMockCommandRunner()
-    mock_run_custom_workflow = mock.MagicMock()
     backup = FakeBackup(
         source_hostname='unused', label='unused', settings_path=None,
         command_runner=mock_command_runner)
-    backup._run_custom_workflow = mock_run_custom_workflow
     # Attach mocks to manager mock so we can track their call order.
     manager_mock = mock.MagicMock()
     manager_mock.attach_mock(mock_create_snapshots, '_create_snapshots')
