@@ -10,7 +10,6 @@ class Logger(logging.Logger):
   Specifically:
     ERROR and above go to stderr
     INFO and above go to syslog, unless debug is True then DEBUG and above
-
   """ 
   def __init__(self, name, debug=False, stderr_logging=True):
     """Initilizes Logger.
@@ -19,7 +18,6 @@ class Logger(logging.Logger):
       name: str, name passed to logging.Logger.
       debug: bool, whether to enable debug logging. Defaults to False.
       stderr_logging: bool, whether to log to stderr. Defaults to True.
-
     """
     logging.Logger.__init__(self, name)
 
