@@ -36,9 +36,6 @@ class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
 class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
-  def setUp(self):
-    super(LVMSourceMixInTest, self).setUp()
-
   @mock.patch.object(lvm.LVMSourceMixIn, '_delete_snapshots')
   @mock.patch.object(lvm.LVMSourceMixIn, '_umount_snapshots')
   @mock.patch.object(lvm.LVMSourceMixIn, '_mount_snapshots')
