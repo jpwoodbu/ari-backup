@@ -155,6 +155,45 @@ console means everthing worked. Check the syslog and your
 your ssh keys setup, the only thing different about remote backups is the
 value you put in the source_hostname parameter.
 
+== Settings and flags ==
+
+Once you've got a workable backup script, you can use it to see what command 
+line flags are available. Using the <i>ari-backup-local-demo</i> we made before,
+run this command line:
+<pre>
+$ ./ari-backup-local-demo --help
+</pre>
+That will display a list of all available flags, a description for each, their
+default value, and in which module they're defined. See 
+[https://code.google.com/p/python-gflags/ python-gflags] for more on how to use
+flags.
+
+The default flags values can be overridden by entries in the
+''/etc/ari-backup/ari-backup.conf.yaml'' config file, on the command line at
+runtime, or by assigning new flag values to the backup object before run() is
+called. By convention, flags are assigned as public atttributes of backup
+objects.
+
+If, for example, you wanted to override the value of the '''remote_user''' flag
+defined in the ari_backup.workflow module, you could define ''remote_user''' in
+the ''/etc/ari-backup/ari-backup.conf.yaml'' config like so:
+<pre>
+remote_user: backup_user
+</pre>
+You can also override it on the command line:
+<pre>
+$ ./my_backup_script --remote_user backup_user
+</pre>
+Finally, you can override it within the backup config file:
+<pre>
+!/usr/bin/env python
+import ari_backup
+backup = ari_backup.RdiffBackup(label='mybackup', source_hostname='localhost')
+backup.include_dir('/home')
+backup.remote_user = 'backup_user'
+backup.run()
+</pre>
+
 == Using ari-backup with cron ==
 
 See ''include/cron/ari-backup'' for an example script you can use with cron.
