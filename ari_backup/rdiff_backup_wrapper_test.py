@@ -26,6 +26,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
   @mock.patch.object(rdiff_backup_wrapper.RdiffBackup, '_remove_older_than')
   def testRemoveOlderThan_timespecIsNone_backupsNotTrimmed(
       self, mock_remove_older_than):
+    FLAGS.remove_older_than_timespec = None
     mock_command_runner = test_lib.GetMockCommandRunner()
     backup = rdiff_backup_wrapper.RdiffBackup(
         remove_older_than_timespec=None, label='unused',
@@ -36,6 +37,22 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.run()
 
     self.assertFalse(mock_remove_older_than.called)
+
+  @mock.patch.object(rdiff_backup_wrapper.RdiffBackup, '_remove_older_than')
+  def testRemoveOlderThan_timespecArgIsNone_timespecFlagUsed(
+      self, mock_remove_older_than):
+    FLAGS.remove_older_than_timespec = '13D' 
+    mock_command_runner = test_lib.GetMockCommandRunner()
+    backup = rdiff_backup_wrapper.RdiffBackup(
+        remove_older_than_timespec=None, label='unused',
+        source_hostname='unused', settings_path=None,
+        command_runner=mock_command_runner)
+
+    backup.include_dir('/unused')
+    backup.run()
+
+    mock_remove_older_than.assert_called_once_with(
+        timespec='13D', error_case=False)
 
   def testRemoveOlderThan_timespecIsNotNone_backupsTrimmed(self):
     FLAGS.rdiff_backup_path = '/fake/rdiff-backup'

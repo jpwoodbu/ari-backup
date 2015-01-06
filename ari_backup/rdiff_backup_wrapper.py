@@ -20,6 +20,11 @@ gflags.DEFINE_string('rdiff_backup_options',
                      ('--exclude-device-files --exclude-fifos '
                       '--exclude-sockets --terminal-verbosity 1'),
                      'default rdiff-backup options')
+gflags.DEFINE_string(
+    'remove_older_than_timespec', None,
+    ('Global timespec for timming rdiff-backup recovery points. Default is '
+     'None, which means no previous recovery points will be trimmed. '
+     'This setting can be overriden per backup config.'))
 
 # The top_level_src_dir flag is used to define the context for the backup
 # mirror. This is especially handy when backing up mounted spanshots so that
@@ -49,9 +54,9 @@ class RdiffBackup(workflow.BaseWorkflow):
       source_hostname: str, the name of the host with the source data to
         backup.
       remove_older_than_timespec: str or None, the maximum age of a backup
-        recovery point (uses the same format as the --remove-older-than argument
-        for rdiff-backup). Defaults to None which will skip removing any
-        historical recovery points.
+        recovery point (uses the same format as the
+        --remove-older-than argument for rdiff-backup). Defaults to None which
+        will use the value of the remove_older_than_timespec flag.
     """
     super(RdiffBackup, self).__init__(label, **kwargs)
     self.source_hostname = source_hostname
@@ -62,6 +67,10 @@ class RdiffBackup(workflow.BaseWorkflow):
     self.rdiff_backup_path = FLAGS.rdiff_backup_path
     self.ssh_compression = FLAGS.ssh_compression
     self.top_level_src_dir = FLAGS.top_level_src_dir
+    if remove_older_than_timespec is None:
+      self.remove_older_than_timespec = FLAGS.remove_older_than_timespec
+    else:
+      self.remove_older_than_timespec = remove_older_than_timespec
 
     # Initialize include and exclude lists.
     self._include_dirs = list()
@@ -77,10 +86,10 @@ class RdiffBackup(workflow.BaseWorkflow):
     self._check_required_flags()
     self._check_required_binaries()
 
-    if remove_older_than_timespec is not None:
+    if self.remove_older_than_timespec is not None:
       self.post_job_hook_list.append((
           self._remove_older_than,
-          {'timespec': remove_older_than_timespec}))
+          {'timespec': self.remove_older_than_timespec}))
 
   # Provide backward compatibility for config files using attributes directly.
   @property
