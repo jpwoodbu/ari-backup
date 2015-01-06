@@ -175,7 +175,7 @@ called. By convention, flags are assigned as public atttributes of backup
 objects.
 
 If, for example, you wanted to override the value of the '''remote_user''' flag
-defined in the ari_backup.workflow module, you could define ''remote_user''' in
+defined in the ari_backup.workflow module, you could define '''remote_user''' in
 the ''/etc/ari-backup/ari-backup.conf.yaml'' config like so:
 <pre>
 remote_user: backup_user
