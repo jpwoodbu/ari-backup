@@ -12,6 +12,7 @@ xargs. The base features include:
 import subprocess
 import shlex
 import sys
+import time
 import yaml
 
 import gflags
@@ -25,6 +26,8 @@ FLAGS = gflags.FLAGS
 gflags.DEFINE_boolean('debug', False, 'enable debug logging')
 gflags.DEFINE_boolean('dry_run', False, 'log actions but do not execute them')
 gflags.DEFINE_integer('max_retries', 3, 'number of times to retry a command')
+gflags.DEFINE_integer('retry_interval', 5,
+                      'number of seconds between command retries')
 gflags.DEFINE_string('remote_user', 'root', 'username used for SSH sessions')
 gflags.DEFINE_string('ssh_path', '/usr/bin/ssh', 'path to ssh binary')
 gflags.DEFINE_boolean('stderr_logging', True, 'enable error logging to stderr')
@@ -106,6 +109,7 @@ class BaseWorkflow(object):
     self.dry_run = FLAGS.dry_run
     self.max_retries = FLAGS.max_retries
     self.remote_user = FLAGS.remote_user
+    self.retry_interval = FLAGS.retry_interval
     self.ssh_path = FLAGS.ssh_path
 
     # Initialize hook lists.
@@ -348,7 +352,7 @@ class BaseWorkflow(object):
     except Exception as e:
       if try_number > self.max_retries:
         raise e
-      # TODO(jpwoodbu) Shouldn't there be a sleep between retries?
+      time.sleep(self.retry_interval)
       return self.run_command_with_retries(command, host, try_number + 1)
 
   def _run_custom_workflow(self):

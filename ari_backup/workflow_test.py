@@ -1,4 +1,5 @@
 import unittest
+import time
 
 import gflags
 import mock
@@ -236,7 +237,9 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     self.assertEqual(stdout, 'fake_stdout')
     self.assertEqual(stderr, 'fake_stderr')
 
-  def testRunCommandWithRetries_firstTrySucceeds_commandNotRetried(self):
+  @mock.patch.object(time, 'sleep')
+  def testRunCommandWithRetries_firstTrySucceeds_commandNotRetried(
+      self, unused_mock_sleep):
     mock_command_runner = test_lib.GetMockCommandRunner()
     # Return empty strings for stdout and stderr and 0 (success) for the exit
     # code.
@@ -248,7 +251,9 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     self.assertEqual(mock_command_runner.run.call_count, 1)
 
-  def testRunCommandWithRetries_firstTryFails_commandRetried(self):
+  @mock.patch.object(time, 'sleep')
+  def testRunCommandWithRetries_firstTryFails_commandRetried(
+      self, unused_mock_sleep):
     FLAGS.max_retries = 1
     mock_command_runner = test_lib.GetMockCommandRunner()
     return1 = (str(), str(), 1)  # command failed
@@ -261,7 +266,9 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     self.assertEqual(mock_command_runner.run.call_count, 2)
 
-  def testRunCommandWithRetries_maxRetriesReached_raisesException(self):
+  @mock.patch.object(time, 'sleep')
+  def testRunCommandWithRetries_maxRetriesReached_raisesException(
+      self, unused_mock_sleep):
     FLAGS.max_retries = 1
     mock_command_runner = test_lib.GetMockCommandRunner()
     return1 = (str(), str(), 1)  # command failed
@@ -273,6 +280,22 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     with self.assertRaises(workflow.NonZeroExitCode):
       test_workflow.run_command_with_retries('test_command')
+
+  @mock.patch.object(time, 'sleep')
+  def testRunCommandWithRetries_firstTryFails_sleepsBetweenRetries(
+      self, mock_sleep):
+    FLAGS.max_retries = 1
+    FLAGS.retry_interval = 7
+    mock_command_runner = test_lib.GetMockCommandRunner()
+    return1 = (str(), str(), 1)  # command failed
+    return2 = (str(), str(), 0)  # command succeeded
+    mock_command_runner.run.side_effect = [return1, return2]
+    test_workflow = workflow.BaseWorkflow(
+        label='unused', settings_path=None, command_runner=mock_command_runner)
+
+    test_workflow.run_command_with_retries('test_command')
+
+    mock_sleep.assert_called_once_with(7)
 
 
 if __name__ == '__main__':
