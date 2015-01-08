@@ -204,6 +204,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
   def testRunCommand_hostIsNotLocalhost_sshArgumentsAdded(self):
     FLAGS.remote_user = 'test_user'
     FLAGS.ssh_path = '/fake/ssh'
+    FLAGS.ssh_port = 1234
     mock_command_runner = test_lib.GetMockCommandRunner()
     test_workflow = workflow.BaseWorkflow(
         label='unused', settings_path=None, command_runner=mock_command_runner)
@@ -212,8 +213,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         'test_command --test_flag test_arg', host='fake_host')
 
     mock_command_runner.run.assert_called_once_with(
-        ['/fake/ssh', 'test_user@fake_host', 'test_command', '--test_flag',
-         'test_arg'])
+        ['/fake/ssh', '-p', '1234', 'test_user@fake_host', 'test_command',
+         '--test_flag', 'test_arg'])
 
   def testRunCommand_commandHasNonZeroExitCode_rasiesException(self):
     mock_command_runner = test_lib.GetMockCommandRunner()

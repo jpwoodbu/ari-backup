@@ -30,6 +30,7 @@ gflags.DEFINE_integer('retry_interval', 5,
                       'number of seconds between command retries')
 gflags.DEFINE_string('remote_user', 'root', 'username used for SSH sessions')
 gflags.DEFINE_string('ssh_path', '/usr/bin/ssh', 'path to ssh binary')
+gflags.DEFINE_integer('ssh_port', 22, 'SSH destination port')
 gflags.DEFINE_boolean('stderr_logging', True, 'enable error logging to stderr')
 
 
@@ -111,6 +112,7 @@ class BaseWorkflow(object):
     self.remote_user = FLAGS.remote_user
     self.retry_interval = FLAGS.retry_interval
     self.ssh_path = FLAGS.ssh_path
+    self.ssh_port = FLAGS.ssh_port
 
     # Initialize hook lists.
     self._pre_job_hooks = list()
@@ -302,8 +304,9 @@ class BaseWorkflow(object):
 
     # Add SSH arguments if this is a remote command.
     if host != 'localhost':
-      ssh_args = shlex.split('{ssh} {user}@{host}'.format(
-          ssh=self.ssh_path, user=self.remote_user, host=host))
+      ssh_args = shlex.split('{ssh} -p {port} {user}@{host}'.format(
+          ssh=self.ssh_path, port=self.ssh_port, user=self.remote_user,
+          host=host))
       args = ssh_args + args
 
     self.logger.debug('run_command %r' % args)
