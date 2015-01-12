@@ -1,18 +1,19 @@
 = ari-backup =
 
-ari-backup is a lightweight wrapper around
-[http://www.nongnu.org/rdiff-backup/ rdiff-backup]. The goal is to provide a
-way to manage many rdiff-backup ''jobs'' consistently and easily with features
-like:
-* centralzed configuration
-* support for backing up local and remote hosts
-* configurable job parallelization
-* ability to run arbitrary commands locally or remotely before and/or after backup jobs (something especially handy for preparing databases pre-backup)
-* logging to syslog
+ari-backup is a lightweight generic workflow engine designed specifically
+for running automated backups. It includes modules with support for running
+backups using [http://www.nongnu.org/rdiff-backup/ rdiff-backup], rdiff-backup
+with LVM snapshots, and syncing files to [http://en.wikipedia.org/wiki/ZFS ZFS]
+datasets using rsync. Features include:
+* Centralzed configuration
+* Support for backing up local and remote hosts
+* Configurable job parallelization
+* Ability to run arbitrary commands locally or remotely before and/or after backup jobs (something especially handy for preparing databases pre-backup)
+* Logging to syslog
 
-The framework can be extended to support more complex backup configurations.
-We currently include extensions that add support for backing up from LVM
-snapshots and backing up to ZFS datasets.
+The included modules extend the basic workflow functionality. The architecture
+of the workflow engine is designed to be easily extended to support other backup
+types.
 
 This application is lightweight thanks mostly to leveraging common system
 tools to provide most of the facility necessary to run a backup system.
@@ -37,15 +38,13 @@ of its use on Windows using [http://www.cygwin.com/ cygwin].
 
 Before you install ari-backup, you should install the following packages from
 your Linux distribution.
-* python-gflags
-* python-yaml
-* rdiff-backup
+* [https://pypi.python.org/pypi/python-gflags/ python-gflags]
+* [https://pypi.python.org/pypi/PyYAML PyYAML]
+* [http://www.nongnu.org/rdiff-backup/ rdiff-backup]
 
 ari-backup requires [http://pyyaml.org/ PyYAML] which is not a pure Python
-library, so you may prefer providing that dependency with a system package. In
-almost all cases, you'll need rdiff-backup installed to do anything meaningful
-with ari-backup. It is also recommended that you also install '''ssh''' if
-you somehow don't already have it.
+library, so you may prefer providing that dependency with a system package
+(python-yaml on Debian/Ubuntu).
 
 To install the ari_backup package to your system, run this as '''root''':
 <pre>
