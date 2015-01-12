@@ -11,9 +11,10 @@ datasets using rsync. Features include:
 * Ability to run arbitrary commands locally or remotely before and/or after backup jobs (something especially handy for preparing databases pre-backup)
 * Logging to syslog
 
-The included modules extend the basic workflow functionality. The architecture
-of the workflow engine is designed to be easily extended to support other backup
-types.
+ari-backup was originally written to automate rdiff-backup jobs. That's been its
+main focus; but overtime it became interesting to add support for other backup
+types. The architecture of the workflow engine is designed to be easily extended
+so that adding new backup types can be done easily.
 
 This application is lightweight thanks mostly to leveraging common system
 tools to provide most of the facility necessary to run a backup system.
