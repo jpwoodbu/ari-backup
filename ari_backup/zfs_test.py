@@ -77,6 +77,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     FLAGS.zfs_snapshot_prefix = 'fake-prefix-'
     FLAGS.remote_user = 'fake_user'
     FLAGS.ssh_path = '/fake/ssh'
+    FLAGS.ssh_port = 1234
     mock_get_current_datetime.return_value = datetime.datetime(
         2015, 1, 2, 3, 4)
     mock_command_runner = test_lib.GetMockCommandRunner()
@@ -92,8 +93,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup._create_zfs_snapshot(error_case=False)
 
     mock_command_runner.run.assert_called_once_with(
-       ['/fake/ssh', 'fake_user@fake_zfs_host', 'zfs', 'snapshot',
-       'fake_pool/fake_dataset@fake-prefix-2015-01-02--0304'])
+       ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs',
+        'snapshot', 'fake_pool/fake_dataset@fake-prefix-2015-01-02--0304'])
 
   def testCreateZFSSnapshot_errorCaseIsTrue_doesNothing(self):
     mock_command_runner = test_lib.GetMockCommandRunner()
@@ -111,6 +112,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
   def testFindSnapshotsOlderThan_runsCorrectZFSCommand(self):
     FLAGS.remote_user = 'fake_user'
     FLAGS.ssh_path = '/fake/ssh'
+    FLAGS.ssh_port = 1234
     mock_command_runner = test_lib.GetMockCommandRunner()
     backup = zfs.ZFSLVMBackup(
         label='unused_label', source_hostname='unused',
@@ -122,8 +124,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     snapshots = backup._find_snapshots_older_than(30)
 
     mock_command_runner.run.assert_called_once_with(
-        ['/fake/ssh', 'fake_user@fake_zfs_host', 'zfs', 'get', '-rH', '-o',
-         'name,value', 'type', 'fake_pool/fake_dataset'])
+        ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs', 'get',
+         '-rH', '-o', 'name,value', 'type', 'fake_pool/fake_dataset'])
 
   @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
   @mock.patch.object(zfs.ZFSLVMBackup, '_get_snapshot_creation_time')
@@ -219,6 +221,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
   def testGetSnapshotCreationTime_runsCorrectZFSCommand(self):
     FLAGS.ssh_path = '/fake/ssh'
+    FLAGS.ssh_port = 1234
     FLAGS.remote_user = 'fake_user'
     mock_command_runner = test_lib.GetMockCommandRunner()
     mock_command_runner.run.return_value = ('Sat Jan  3  6:48 2015', str(), 0)
@@ -232,14 +235,15 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     _ = backup._get_snapshot_creation_time('fake_pool/fake_snapshot')
 
     mock_command_runner.run.assert_called_once_with(
-        ['/fake/ssh', 'fake_user@fake_zfs_host', 'zfs', 'get', '-H', '-o',
-         'value', 'creation', 'fake_pool/fake_snapshot'])
+        ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs', 'get',
+         '-H', '-o', 'value', 'creation', 'fake_pool/fake_snapshot'])
 
   @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
   @mock.patch.object(zfs.ZFSLVMBackup, '_find_snapshots_older_than')
   def testDestroyExpiredZFSSnapshots_errorCaseIsFalse_destroysSnapshots(
       self, mock_find_snapshots_older_than, mock_get_current_datetime):
     FLAGS.ssh_path = '/fake/ssh'
+    FLAGS.ssh_port = 1234
     FLAGS.remote_user = 'fake_user'
     mock_find_snapshots_older_than.return_value = [
         'zfs/homedirs@fake-prefix-2014-01-05--0630',
@@ -253,11 +257,11 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         dataset_name='unused_pool/unused_dataset', snapshot_expiration_days=30,
         settings_path=None, command_runner=mock_command_runner)
     expected_call1 = mock.call(
-        ['/fake/ssh', 'fake_user@fake_zfs_host', 'zfs', 'destroy',
-         'zfs/homedirs@fake-prefix-2014-01-05--0630'])
+        ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs',
+         'destroy', 'zfs/homedirs@fake-prefix-2014-01-05--0630'])
     expected_call2 = mock.call(
-        ['/fake/ssh', 'fake_user@fake_zfs_host', 'zfs', 'destroy',
-         'zfs/homedirs@fake-prefix-2014-01-06--0648'])
+        ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs',
+         'destroy', 'zfs/homedirs@fake-prefix-2014-01-06--0648'])
 
     backup._destroy_expired_zfs_snapshots(30, error_case=False)
 
