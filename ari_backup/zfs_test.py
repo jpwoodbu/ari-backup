@@ -68,7 +68,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     mock_command_runner.run.called_once_with(
         ['/fake/rsync', '--fake-options', '/fake_root/fake_label/',
-        'fake_dst_host:/fake_dst'])
+        'fake_dst_host:/fake_dst'], True)
 
   @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
   def testCreateZFSSnapshot_errorCaseIsFalse_createsSnapshot(
@@ -94,7 +94,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     mock_command_runner.run.assert_called_once_with(
        ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs',
-        'snapshot', 'fake_pool/fake_dataset@fake-prefix-2015-01-02--0304'])
+        'snapshot', 'fake_pool/fake_dataset@fake-prefix-2015-01-02--0304'],
+       False)
 
   def testCreateZFSSnapshot_errorCaseIsTrue_doesNothing(self):
     mock_command_runner = test_lib.GetMockCommandRunner()
@@ -125,7 +126,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     mock_command_runner.run.assert_called_once_with(
         ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs', 'get',
-         '-rH', '-o', 'name,value', 'type', 'fake_pool/fake_dataset'])
+         '-rH', '-o', 'name,value', 'type', 'fake_pool/fake_dataset'], False)
 
   @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
   @mock.patch.object(zfs.ZFSLVMBackup, '_get_snapshot_creation_time')
@@ -236,7 +237,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     mock_command_runner.run.assert_called_once_with(
         ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs', 'get',
-         '-H', '-o', 'value', 'creation', 'fake_pool/fake_snapshot'])
+         '-H', '-o', 'value', 'creation', 'fake_pool/fake_snapshot'], False)
 
   @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
   @mock.patch.object(zfs.ZFSLVMBackup, '_find_snapshots_older_than')
@@ -258,10 +259,10 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         settings_path=None, command_runner=mock_command_runner)
     expected_call1 = mock.call(
         ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs',
-         'destroy', 'zfs/homedirs@fake-prefix-2014-01-05--0630'])
+         'destroy', 'zfs/homedirs@fake-prefix-2014-01-05--0630'], False)
     expected_call2 = mock.call(
         ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs',
-         'destroy', 'zfs/homedirs@fake-prefix-2014-01-06--0648'])
+         'destroy', 'zfs/homedirs@fake-prefix-2014-01-06--0648'], False)
 
     backup._destroy_expired_zfs_snapshots(30, error_case=False)
 

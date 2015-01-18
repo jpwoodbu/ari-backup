@@ -92,10 +92,12 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup = FakeBackup(
         source_hostname='localhost', label='unused', settings_path=None,
         command_runner=mock_command_runner)
-    expected_call_fakevolume1 = mock.call(['lvcreate', '-s', '-L', '1G',
-        'fake_volume_group/fake_volume1', '-n', 'fake_volume1-fake_backup'])
-    expected_call_fakevolume2 = mock.call(['lvcreate', '-s', '-L', '1G',
-        'fake_volume_group/fake_volume2', '-n', 'fake_volume2-fake_backup'])
+    expected_call_fakevolume1 = mock.call(
+        ['lvcreate', '-s', '-L', '1G', 'fake_volume_group/fake_volume1', '-n',
+         'fake_volume1-fake_backup'], True)
+    expected_call_fakevolume2 = mock.call(
+        ['lvcreate', '-s', '-L', '1G', 'fake_volume_group/fake_volume2', '-n',
+         'fake_volume2-fake_backup'], True)
 
     backup.add_volume('fake_volume_group/fake_volume1', '/etc')
     backup.add_volume('fake_volume_group/fake_volume2', '/var')
@@ -145,10 +147,10 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup = FakeBackup(
         source_hostname='localhost', label='unused', settings_path=None,
         command_runner=mock_command_runner)
-    expected_call_fakevolume1 = mock.call(['lvremove', '-f',
-        'fake_volume_group/fake_volume1-fake_backup'])
-    expected_call_fakevolume2 = mock.call(['lvremove', '-f',
-        'fake_volume_group/fake_volume2-fake_backup'])
+    expected_call_fakevolume1 = mock.call(
+        ['lvremove', '-f', 'fake_volume_group/fake_volume1-fake_backup'], True)
+    expected_call_fakevolume2 = mock.call(
+        ['lvremove', '-f', 'fake_volume_group/fake_volume2-fake_backup'], True)
 
     backup.add_volume('fake_volume_group/fake_volume1', '/unused1')
     backup.add_volume('fake_volume_group/fake_volume2', '/unused2')
@@ -179,9 +181,9 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         source_hostname='localhost', label='fake_backup', settings_path=None,
         command_runner=mock_command_runner)
     expected_call_fakevolume1 = mock.call(
-        ['mkdir', '-p', '/fake_root/fake_backup/etc'])
+        ['mkdir', '-p', '/fake_root/fake_backup/etc'], True)
     expected_call_fakevolume2 = mock.call(
-        ['mkdir', '-p', '/fake_root/fake_backup/var'])
+        ['mkdir', '-p', '/fake_root/fake_backup/var'], True)
 
     backup.add_volume('fake_volume_group/fake_volume1', '/etc')
     backup.add_volume('fake_volume_group/fake_volume2', '/var')
@@ -229,11 +231,11 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     expected_call_fakevolume1 = mock.call(
         ['mount', '-o', 'ro',
          '/dev/fake_volume_group/fake_volume1-fake_backup',
-         '/fake_root/fake_backup/etc'])
+         '/fake_root/fake_backup/etc'], True)
     expected_call_fakevolume2 = mock.call(
         ['mount', '-o', 'noexec',
         '/dev/fake_volume_group/fake_volume2-fake_backup',
-         '/fake_root/fake_backup/var'])
+         '/fake_root/fake_backup/var'], True)
 
     backup.add_volume('fake_volume_group/fake_volume1', '/etc', 'ro')
     backup.add_volume('fake_volume_group/fake_volume2', '/var', 'noexec')
@@ -254,10 +256,10 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         command_runner=mock_command_runner)
     expected_call_fakevolume1 = mock.call(
         ['mount', '/dev/fake_volume_group/fake_volume1-fake_backup',
-         '/fake_root/fake_backup/etc'])
+         '/fake_root/fake_backup/etc'], True)
     expected_call_fakevolume2 = mock.call(
         ['mount', '/dev/fake_volume_group/fake_volume2-fake_backup',
-         '/fake_root/fake_backup/var'])
+         '/fake_root/fake_backup/var'], True)
 
     backup.add_volume('fake_volume_group/fake_volume1', '/etc')
     backup.add_volume('fake_volume_group/fake_volume2', '/var')
@@ -290,9 +292,9 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         source_hostname='localhost', label='fake_backup', settings_path=None,
         command_runner=mock_command_runner)
     expected_call_fakevolume1 = mock.call(
-        ['umount', '/fake_root/fake_backup/etc'])
+        ['umount', '/fake_root/fake_backup/etc'], True)
     expected_call_fakevolume2 = mock.call(
-        ['umount', '/fake_root/fake_backup/var'])
+        ['umount', '/fake_root/fake_backup/var'], True)
 
     backup.add_volume('fake_volume_group/fake_volume1', '/etc')
     backup.add_volume('fake_volume_group/fake_volume2', '/var')
@@ -313,9 +315,9 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         source_hostname='localhost', label='fake_backup', settings_path=None,
         command_runner=mock_command_runner)
     expected_call_fakevolume1 = mock.call(
-        ['rmdir', '/fake_root/fake_backup/etc'])
+        ['rmdir', '/fake_root/fake_backup/etc'], True)
     expected_call_fakevolume2 = mock.call(
-        ['rmdir', '/fake_root/fake_backup/var'])
+        ['rmdir', '/fake_root/fake_backup/var'], True)
 
     backup.add_volume('fake_volume_group/fake_volume1', '/etc')
     backup.add_volume('fake_volume_group/fake_volume2', '/var')

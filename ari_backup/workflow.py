@@ -49,11 +49,12 @@ class NonZeroExitCode(WorkflowError):
 class CommandRunner(object):
   """This class is a simple abstration layer to the subprocess module."""
 
-  def run(self, args):
+  def run(self, args, shell):
     """Runs a command as a subprocess.
 
     Args:
       args: list, command line arguments to be executed.
+      shell: bool, whether to run the command within a shell.
 
     Returns:
       A 3-tuple containing a str with the stdout, a str with the stderr, and an
@@ -63,7 +64,8 @@ class CommandRunner(object):
       CommandNotFound: when the excutable is not found on the file system.
     """
     try:
-      self._process = subprocess.Popen(args, stdin=subprocess.PIPE,
+      self._process = subprocess.Popen(args, shell=shell,
+                                       stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
     except IOError:
@@ -294,6 +296,7 @@ class BaseWorkflow(object):
         run.
       host: str, the host on which the command will be executed.
     """
+    shell = True
     # make args a list if it's not already so
     if isinstance(command, basestring):
       args = shlex.split(command)
@@ -304,6 +307,7 @@ class BaseWorkflow(object):
 
     # Add SSH arguments if this is a remote command.
     if host != 'localhost':
+      shell = False
       ssh_args = shlex.split('{ssh} -p {port} {user}@{host}'.format(
           ssh=self.ssh_path, port=self.ssh_port, user=self.remote_user,
           host=host))
@@ -317,7 +321,7 @@ class BaseWorkflow(object):
       # We really want to block until our subprocess exists or
       # KeyboardInterrupt. If we don't, clean-up tasks will likely fail.
       try:
-        stdout, stderr, exitcode = self._command_runner.run(args)
+        stdout, stderr, exitcode = self._command_runner.run(args, shell)
       except KeyboardInterrupt:
         # Let's try to stop our subprocess if the user issues a
         # KeyboardInterrupt.
