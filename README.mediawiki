@@ -276,7 +276,7 @@ backup.run()
 
 TODO(jpwoodbu) Write up examples of how to use the ZFSLVMBackup extension.
 
-== Running command before or after a backup ==
+== Running commands before or after a backup ==
 
 Each workflow object has a ''run_command'' method that can be used to run
 commands locally or remotely before or after the backup is run.
@@ -296,8 +296,10 @@ backup = ari_backup.RdiffLVMBackup(
 backup.add_volume('vg0/root', '/')
 backup.include_dir('/etc')
 
+# Dump database to disk to get a consistent copy.
 backup.run_command(
     'mysqldump --all-databases > /var/backups/mysql.sql', host='db-server')
+
 backup.run()
 </pre>
 In the above example we're using file redirection to dump the database backup
