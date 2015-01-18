@@ -9,6 +9,7 @@ xargs. The base features include:
   jobs
 * logging to syslog
 """
+import copy
 import subprocess
 import shlex
 import sys
@@ -49,7 +50,7 @@ class NonZeroExitCode(WorkflowError):
 class CommandRunner(object):
   """This class is a simple abstration layer to the subprocess module."""
 
-  def run(self, args):
+  def run(self, args, shell):
     """Runs a command as a subprocess.
 
     Args:
@@ -289,16 +290,26 @@ class BaseWorkflow(object):
     Given a command line, attempt to execute it on the host named in the host
     argument via SSH, or locally if host is "localhost".
 
+    Remote commands are always run through a shell on the remote host. Local
+    commands will be run through a shell only when the command arg is a string.
+    This is partly due to the subprocess.Popen interface recommending passing
+    it args as a string when running a new process within a shell.
+
     Args:
       command: str or list, a command line or list of command line arguments to
         run.
       host: str, the host on which the command will be executed.
     """
-    # make args a list if it's not already so
     if isinstance(command, basestring):
-      args = shlex.split(command)
+      shell = True
+      # For remote commands, we want args as a list so it's easier to prepend
+      # the SSH command to it.
+      if host != 'localhost':
+        args = shlex.split(command)
     elif isinstance(command, list):
-      args = command
+      shell = False
+      # Let's avoid mutating the list the user provided.
+      args = copy.copy(command)
     else:
       raise TypeError('run_command: command arg must be str or list')
 
@@ -317,7 +328,7 @@ class BaseWorkflow(object):
       # We really want to block until our subprocess exists or
       # KeyboardInterrupt. If we don't, clean-up tasks will likely fail.
       try:
-        stdout, stderr, exitcode = self._command_runner.run(args)
+        stdout, stderr, exitcode = self._command_runner.run(args, shell)
       except KeyboardInterrupt:
         # Let's try to stop our subprocess if the user issues a
         # KeyboardInterrupt.
