@@ -276,6 +276,60 @@ backup.run()
 
 TODO(jpwoodbu) Write up examples of how to use the ZFSLVMBackup extension.
 
+== Running command before or after a backup ==
+
+Each workflow object has a ''run_command'' method that can be used to run
+commands locally or remotely before or after the backup is run.
+
+Let's say, for example, you want to dump a database to disk before your backup.
+We can expand on our previous example using the lvm module.
+<pre>
+#!/usr/bin/env python
+import ari_backup
+
+backup = ari_backup.RdiffLVMBackup(
+    label='mybackup',
+    source_hostname='db-server',
+    remove_older_than_timespec='1M'
+)
+
+backup.add_volume('vg0/root', '/')
+backup.include_dir('/etc')
+
+backup.run_command(
+    'mysqldump --all-databases > /var/backups/mysql.sql', host='db-server')
+backup.run()
+</pre>
+In the above example we're using file redirection to dump the database backup
+to a particular path. That's a shell feature; but that's OK because the command
+will be run through a shell on the remote host via SSH. When running commands
+locally, if you require the command to be run through shell, you '''must'''
+pass the command argument to ''run_command'' as a string.
+<pre>
+# This snippet will be run locally in a shell and will successfully create a
+# /tmp/delme file with 'test' inside.
+backup.run_command('echo test > /tmp/delme', host='localhost')
+
+# run_command() will also accept a list for the command argument, but will not
+# run the command through a shell explicitly. However, remote commands are run
+# through a shell implicitly because SSH is uses to execute the command.  This
+# snippet will silently fail to create the /tmp/delme file.
+backup.run_command(['echo', 'test', '>', '/tmp/delme'], host='localhost')
+</pre>
+In the latter example everything after 'echo' is passed as an argument to echo
+and there was no shell to recognize the file redirection token and actually
+make the file.
+
+ari-backup internally always passes a list as the command argument to
+''run_command()''. This is done for exlicitness. And ''run_command()''
+accepting commands as lists could also be useful in some backup configurations.
+But if what you're running uses shell features, be sure to pass in your command
+as a string.
+
+If running a command locally, you can either pass 'localhost' as the host
+argument or leave out the host argument entirely.
+
+
 == History and Namesake ==
 
 ari-backup gets its name from the

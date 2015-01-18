@@ -62,7 +62,7 @@ class CommandRunner(object):
       int with the return code of the executed process.
 
     Raises:
-      CommandNotFound: when the excutable is not found on the file system.
+      CommandNotFound: when the executable is not found on the file system.
     """
     try:
       self._process = subprocess.Popen(args, shell=shell,
@@ -301,6 +301,14 @@ class BaseWorkflow(object):
       command: str or list, a command line or list of command line arguments to
         run.
       host: str, the host on which the command will be executed.
+
+    Returns:
+      A 2-typle containing the stdout and stderr from the executed process.
+
+    Raises:
+      TypeError: when command arg is not a str or a list.
+      CommandNotFound: when the executable is not found on the file system.
+      NonZeroExitCode: when the executable returns a non-zero exit code.
     """
     # Let's avoid mutating the user provided command as it may be a mutable
     # type.
