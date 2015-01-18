@@ -1,5 +1,6 @@
 """ZFS based backup workflows."""
 import datetime
+import shlex
 
 import gflags
 
@@ -98,19 +99,14 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
     # Since we're dealing with ZFS datasets, let's always exclude the .zfs
     # directory in our rsync options.
-    rsync_options = self.rsync_options + " --exclude '/.zfs'"
+    rsync_options = shlex.split(self.rsync_options) + ['--exclude', '/.zfs']
 
     # We add a trailing slash to the src path otherwise rsync will make a
     # subdirectory at the destination, even if the destination is already a
     # directory.
     rsync_src = self._snapshot_mount_point_base_path + '/'
 
-    command = '{rsync_path} {rsync_options} {src} {dst}'.format(
-        rsync_path=self.rsync_path,
-        rsync_options=rsync_options,
-        src=rsync_src,
-        dst=self.rsync_dst)
-
+    command = [self.rsync_path] + rsync_options + [rsync_src, self.rsync_dst]
     self.run_command(command, self.source_hostname)
     self.logger.debug('ZFSLVMBackup._run_custom_workflow completed')
 
@@ -134,8 +130,9 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
       timestamp = self._get_current_datetime().strftime(
           self.zfs_snapshot_timestamp_format)
       snapshot_name = self.zfs_snapshot_prefix + timestamp
-      command = 'zfs snapshot {dataset_name}@{snapshot_name}'.format(
+      snapshot_path = '{dataset_name}@{snapshot_name}'.format(
           dataset_name=self.dataset_name, snapshot_name=snapshot_name)
+      command = ['zfs', 'snapshot', snapshot_path]
       self.run_command(command, self.zfs_hostname)
 
   def _find_snapshots_older_than(self, days):
@@ -153,9 +150,9 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     """
     expiration = self._get_current_datetime() - datetime.timedelta(days=days)
     # Let's find all the snapshots for this dataset.
-    command = 'zfs get -rH -o name,value type {dataset_name}'.format(
-        dataset_name=self.dataset_name)
-    (stdout, unused_stderr) = self.run_command(command, self.zfs_hostname)
+    command = ['zfs', 'get', '-rH', '-o', 'name,value', 'type',
+               self.dataset_name]
+    stdout, unused_stderr = self.run_command(command, self.zfs_hostname)
 
     snapshots = list()
     # Sometimes we get extra lines which are empty, so we'll strip the lines.
@@ -183,8 +180,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     Returns:
       A datetime object representing the creation time of the snapshot.
     """
-    command = 'zfs get -H -o value creation {snapshot}'.format(
-        snapshot=snapshot)
+    command = ['zfs', 'get', '-H', '-o', 'value', 'creation', snapshot]
     stdout, unused_stderr = self.run_command(command, self.zfs_hostname)
     return datetime.datetime.strptime(stdout.strip(), '%a %b %d %H:%M %Y')
 
@@ -210,8 +206,8 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
       # Destroy expired snapshots.
       for snapshot in snapshots:
-        self.run_command('zfs destroy {snapshot}'.format(snapshot=snapshot),
-                         self.zfs_hostname)
+        command = ['zfs', 'destroy', snapshot]
+        self.run_command(command, self.zfs_hostname)
         snapshots_destroyed = True
         self.logger.info('{snapshot} destroyed'.format(snapshot=snapshot))
 

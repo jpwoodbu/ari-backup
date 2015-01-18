@@ -1,5 +1,6 @@
-import unittest
+import subprocess
 import time
+import unittest
 
 import gflags
 import mock
@@ -11,6 +12,66 @@ import test_lib
 FLAGS = gflags.FLAGS
 # Disable logging to stderr when running tests.
 FLAGS.stderr_logging = False
+
+
+class CommandRunnerTest(unittest.TestCase):
+
+  def setUp(self):
+    super(CommandRunnerTest, self).setUp()
+    self.command_runner = workflow.CommandRunner()
+    patcher = mock.patch.object(subprocess, 'Popen')
+    self.addCleanup(patcher.stop)
+    self.mock_popen = patcher.start()
+    self.mock_popen.return_value = mock.MagicMock(
+        returncode=0, communicate=mock.MagicMock(return_value=('', '')))
+
+  def testRun_shellIsTrue_opensProcessWithShell(self):
+    self.command_runner.run(['fake_program', 'fake_arg1'], True)
+    self.mock_popen.assert_called_once_with(
+        ['fake_program', 'fake_arg1'], shell=True, stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+  def testRun_shellIsFalse_opensProcessWithoutShell(self):
+    self.command_runner.run(['fake_program', 'fake_arg1'], False)
+    self.mock_popen.assert_called_once_with(
+        ['fake_program', 'fake_arg1'], shell=False, stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+  def testRun_commandNotFound_raisesException(self):
+    self.mock_popen.side_effect = IOError
+
+    with self.assertRaises(workflow.CommandNotFound):
+      self.command_runner.run(['unused_program'], True)
+
+  @mock.patch.object(subprocess, 'Popen')
+  def testRun_returnsStdOut(self, mock_popen):
+    mock_popen.return_value = mock.MagicMock(
+        communicate=mock.MagicMock(return_value=('fake_stdout', 'unused')))
+
+    stdout, _, _ = self.command_runner.run(
+        ['unused_program'], True)
+
+    self.assertEqual(stdout, 'fake_stdout')
+
+  @mock.patch.object(subprocess, 'Popen')
+  def testRun_returnsStdErr(self, mock_popen):
+    mock_popen.return_value = mock.MagicMock(
+        communicate=mock.MagicMock(return_value=('unused', 'fake_stderr')))
+
+    _, stderr, _ = self.command_runner.run(
+        ['unused_program'], True)
+
+    self.assertEqual(stderr, 'fake_stderr')
+
+  @mock.patch.object(subprocess, 'Popen')
+  def testRun_returnsReturnCode(self, mock_popen):
+    mock_popen.return_value = mock.MagicMock(
+        returncode=3,
+        communicate=mock.MagicMock(return_value=('unused', 'unused')))
+
+    _, _, return_code = self.command_runner.run(['unused_program'], True)
+
+    self.assertEqual(return_code, 3)
 
 
 class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
@@ -171,7 +232,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     test_lib.AssertCallsInOrder(manager_mock, expected_calls)
 
-  def testRunCommand_commandIsString_commandIsRun(self):
+  def testRunCommand_commandIsString_commandIsRunInShell(self):
     mock_command_runner = test_lib.GetMockCommandRunner()
     test_workflow = workflow.BaseWorkflow(
         label='unused', settings_path=None, command_runner=mock_command_runner)
@@ -180,9 +241,9 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         'test_command --test_flag test_arg', host='localhost')
 
     mock_command_runner.run.assert_called_once_with(
-        ['test_command', '--test_flag', 'test_arg'])
+        'test_command --test_flag test_arg', True)
 
-  def testRunCommand_commandIsList_commandIsRun(self):
+  def testRunCommand_commandIsList_commandIsRunWithoutShell(self):
     mock_command_runner = test_lib.GetMockCommandRunner()
     test_workflow = workflow.BaseWorkflow(
         label='unused', settings_path=None, command_runner=mock_command_runner)
@@ -191,7 +252,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         ['test_command', '--test_flag', 'test_arg'], host='localhost')
 
     mock_command_runner.run.assert_called_once_with(
-        ['test_command', '--test_flag', 'test_arg'])
+        ['test_command', '--test_flag', 'test_arg'], False)
 
   def testRunCommand_commandIsNotStringOrList_raisesException(self):
     mock_command_runner = test_lib.GetMockCommandRunner()
@@ -214,7 +275,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     mock_command_runner.run.assert_called_once_with(
         ['/fake/ssh', '-p', '1234', 'test_user@fake_host', 'test_command',
-         '--test_flag', 'test_arg'])
+         '--test_flag', 'test_arg'], False)
 
   def testRunCommand_commandHasNonZeroExitCode_rasiesException(self):
     mock_command_runner = test_lib.GetMockCommandRunner()

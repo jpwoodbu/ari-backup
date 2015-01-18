@@ -188,54 +188,54 @@ class RdiffBackup(workflow.BaseWorkflow):
     # This will be in the format we'd normally pass to the command-line
     # e.g. [ '--include', '/dir/to/include', '--exclude',
     # '/dir/to/exclude']
-    arg_list = [self.rdiff_backup_path]
+    args = [self.rdiff_backup_path]
 
     # Add default options to arguments.
     default_options = shlex.split(FLAGS.rdiff_backup_options)
-    arg_list.extend(default_options)
+    args.extend(default_options)
 
     # This conditional reads strangely, but that's because rdiff-backup not
     # only defaults to having SSH compression enabled, it also doesn't have an
     # option to explicitly enable it -- only the option to disable it.
     if not self.source_hostname == 'localhost' and not self.ssh_compression:
-      arg_list.append('--ssh-no-compression')
+      args.append('--ssh-no-compression')
 
     # Add exclude and includes to our arguments
     for exclude_dir in self._exclude_dirs:
-      arg_list.append('--exclude')
-      arg_list.append(exclude_dir)
+      args.append('--exclude')
+      args.append(exclude_dir)
 
     for exclude_file in self._exclude_files:
-      arg_list.append('--exclude-filelist')
-      arg_list.append(exclude_file)
+      args.append('--exclude-filelist')
+      args.append(exclude_file)
 
     for include_dir in self._include_dirs:
-      arg_list.append('--include')
-      arg_list.append(include_dir)
+      args.append('--include')
+      args.append(include_dir)
 
     for include_file in self._include_files:
-      arg_list.append('--include-filelist')
-      arg_list.append(include_file)
+      args.append('--include-filelist')
+      args.append(include_file)
 
     # Exclude everything else
-    arg_list += ['--exclude', '**']
+    args += ['--exclude', '**']
 
     # Add a source argument
     if self.source_hostname == 'localhost':
-      arg_list.append(self.top_level_src_dir)
+      args.append(self.top_level_src_dir)
     else:
-      arg_list.append(
+      args.append(
           '{remote_user}@{source_hostname}::{top_level_src_dir}'.format(
               remote_user=self.remote_user,
               source_hostname=self.source_hostname,
               top_level_src_dir=self.top_level_src_dir))
 
     # Add a destination argument
-    arg_list.append('{backup_store_path}/{label}'.format(
+    args.append('{backup_store_path}/{label}'.format(
         backup_store_path=self.backup_store_path, label=self.label))
 
     # Rdiff-backup GO!
-    self.run_command(arg_list)
+    self.run_command(args)
     self.logger.debug('_run_backup completed')
 
   def _remove_older_than(self, timespec, error_case):
@@ -254,7 +254,7 @@ class RdiffBackup(workflow.BaseWorkflow):
     if not error_case:
       self.logger.info('remove_older_than %s started' % timespec)
 
-      arg_list = [
+      args = [
           self.rdiff_backup_path,
           '--force',
           '--remove-older-than',
@@ -262,5 +262,5 @@ class RdiffBackup(workflow.BaseWorkflow):
           '{}/{}'.format(self.backup_store_path, self.label),
       ]
 
-      self.run_command(arg_list)
+      self.run_command(args)
       self.logger.info('remove_older_than %s completed' % timespec)

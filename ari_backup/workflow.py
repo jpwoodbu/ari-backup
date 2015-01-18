@@ -55,6 +55,7 @@ class CommandRunner(object):
 
     Args:
       args: list, command line arguments to be executed.
+      shell: bool, whether to run the command within a shell.
 
     Returns:
       A 3-tuple containing a str with the stdout, a str with the stderr, and an
@@ -64,7 +65,8 @@ class CommandRunner(object):
       CommandNotFound: when the excutable is not found on the file system.
     """
     try:
-      self._process = subprocess.Popen(args, stdin=subprocess.PIPE,
+      self._process = subprocess.Popen(args, shell=shell,
+                                       stdin=subprocess.PIPE,
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
     except IOError:
@@ -300,6 +302,9 @@ class BaseWorkflow(object):
         run.
       host: str, the host on which the command will be executed.
     """
+    # Let's avoid mutating the user provided command as it may be a mutable
+    # type.
+    args = copy.copy(command)
     if isinstance(command, basestring):
       shell = True
       # For remote commands, we want args as a list so it's easier to prepend
@@ -308,13 +313,12 @@ class BaseWorkflow(object):
         args = shlex.split(command)
     elif isinstance(command, list):
       shell = False
-      # Let's avoid mutating the list the user provided.
-      args = copy.copy(command)
     else:
       raise TypeError('run_command: command arg must be str or list')
 
     # Add SSH arguments if this is a remote command.
     if host != 'localhost':
+      shell = False
       ssh_args = shlex.split('{ssh} -p {port} {user}@{host}'.format(
           ssh=self.ssh_path, port=self.ssh_port, user=self.remote_user,
           host=host))

@@ -68,7 +68,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     mock_command_runner.run.assert_called_with(
         ['/fake/rdiff-backup', '--force', '--remove-older-than', '60D',
-         '/fake/backup-store/fake_backup'])
+         '/fake/backup-store/fake_backup'], False)
 
   def testCheckRequiredFlags_backupStorePathNotSet_raisesException(self):
     FLAGS.backup_store_path = None
@@ -100,9 +100,9 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.include_dir('/var')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--include', '/etc', '--include', '/var', '--exclude', '**', '/',
-        '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup', '--include', '/etc', '--include', '/var',
+         '--exclude', '**', '/', '/fake/backup-store/fake_backup'], False)
 
   def testExcludeDir_backupExcludesDirs(self):
     FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
@@ -119,9 +119,9 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.exclude_dir('/var/cache')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--exclude', '/var/cache', '--include', '/var', '--exclude', '**', '/',
-        '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup', '--exclude', '/var/cache', '--include', '/var',
+         '--exclude', '**', '/', '/fake/backup-store/fake_backup'], False)
 
   def testIncludeFile_backupIncludesFiles(self):
     FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
@@ -138,10 +138,11 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.include_file('/really_important_file2')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--include-filelist', '/really_important_file1', '--include-filelist',
-        '/really_important_file2', '--exclude', '**', '/',
-        '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup',
+         '--include-filelist', '/really_important_file1', '--include-filelist',
+         '/really_important_file2', '--exclude', '**', '/',
+         '/fake/backup-store/fake_backup'], False)
 
   def testExcludeFile_backupExcludesFiles(self):
     FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
@@ -158,9 +159,10 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.exclude_file('/etc/huge_useless_file')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--exclude-filelist', '/etc/huge_useless_file', '--include', '/etc',
-        '--exclude', '**', '/', '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup', '--exclude-filelist', '/etc/huge_useless_file',
+         '--include', '/etc', '--exclude', '**', '/',
+         '/fake/backup-store/fake_backup'], False)
 
   def testRemoveOlderThan_errorCaseIsTrue_doesNotTrimBackups(self):
     mock_command_runner = test_lib.GetMockCommandRunner()
@@ -182,9 +184,9 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     backup._remove_older_than('60D', error_case=False)
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--force', '--remove-older-than', '60D',
-        '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup', '--force', '--remove-older-than', '60D',
+         '/fake/backup-store/fake_backup'], False)
 
   def testRunCustomWorkflow_sshCompressionFlagIsFalse_sshCompressionDisabled(
       self):
@@ -201,9 +203,10 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.include_dir('/fake_dir')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--ssh-no-compression', '--include', '/fake_dir', '--exclude', '**',
-        'fake_user@fake_host::/', '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup', '--ssh-no-compression', '--include',
+         '/fake_dir', '--exclude', '**', 'fake_user@fake_host::/',
+         '/fake/backup-store/fake_backup'], False)
 
   def testRunCustomWorkflow_sshCompressionFlagIsTrue_sshCompressionNotDisabled(
       self):
@@ -220,9 +223,9 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.include_dir('/fake_dir')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--include', '/fake_dir', '--exclude', '**', 'fake_user@fake_host::/',
-        '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup', '--include', '/fake_dir', '--exclude', '**',
+         'fake_user@fake_host::/', '/fake/backup-store/fake_backup'], False)
 
   def testRunCustomWorkflow_sourceHostnameIsLocalhost_sourceIsPath(self):
     FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
@@ -236,9 +239,9 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.include_dir('/fake_dir')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--include', '/fake_dir', '--exclude', '**', '/', 
-        '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup', '--include', '/fake_dir', '--exclude', '**',
+         '/', '/fake/backup-store/fake_backup'], False)
 
   def testRunCustomWorkflow_sourceHostnameIsNotLocalhost_sourceIsHost(self):
     FLAGS.ssh_compression = True
@@ -254,9 +257,10 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.include_dir('/fake_dir')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--include', '/fake_dir', '--exclude', '**', 'fake_user@fake_host::/',
-        '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup',
+         '--include', '/fake_dir', '--exclude', '**', 'fake_user@fake_host::/',
+         '/fake/backup-store/fake_backup'], False)
 
   def testRunCustomWorkflow_rdiffBackupOptionsGiven_addsOptionsToCommand(self):
     FLAGS.rdiff_backup_options = '--fake-extra-option1 --fake-extra-option2'
@@ -271,9 +275,10 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     backup.include_dir('/fake_dir')
     backup.run()
 
-    mock_command_runner.run.assert_called_once_with(['/fake/rdiff-backup',
-        '--fake-extra-option1', '--fake-extra-option2', '--include',
-        '/fake_dir', '--exclude', '**', '/', '/fake/backup-store/fake_backup'])
+    mock_command_runner.run.assert_called_once_with(
+        ['/fake/rdiff-backup', '--fake-extra-option1', '--fake-extra-option2',
+         '--include', '/fake_dir', '--exclude', '**', '/',
+         '/fake/backup-store/fake_backup'], False)
 
 
 class ZRdiffBackupCheckRequiredBinariesTest(
