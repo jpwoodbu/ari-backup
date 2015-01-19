@@ -130,19 +130,31 @@ class BaseWorkflow(object):
   # Maintain backward compatibility with old hooks interface.
   @property
   def pre_job_hook_list(self):
+    self.logger.warning(
+        'pre_job_hook_list is deprecated. Please use add_pre_hook(), '
+        'insert_pre_hook(), and delete_pre_hook() instead.')
     return self._pre_job_hooks
 
   @pre_job_hook_list.setter
   def pre_job_hook_list(self, value):
-    self._pre_job_hook = value
+    self.logger.warning(
+        'pre_job_hook_list is deprecated. Please use add_pre_hook(), '
+        'insert_pre_hook(), and delete_pre_hook() instead.')
+    self._pre_job_hooks = value
 
   @property
   def post_job_hook_list(self):
+    self.logger.warning(
+        'post_job_hook_list is depostcated. Please use add_post_hook(), '
+        'insert_post_hook(), and delete_post_hook() instead.')
     return self._post_job_hooks
 
   @post_job_hook_list.setter
   def post_job_hook_list(self, value):
-    self._post_job_hook = value
+    self.logger.warning(
+        'post_job_hook_list is depostcated. Please use add_post_hook(), '
+        'insert_post_hook(), and delete_post_hook() instead.')
+    self._post_job_hooks = value
 
   def _get_settings_from_file(self):
     """Returns settings stored as YAML in the configuration file as a dict."""

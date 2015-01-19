@@ -39,10 +39,6 @@ class LVMSourceMixIn(object):
     # performance and reduce writes to the snapshots.
     self._logical_volumes = list()
 
-    # Provide backward compatibility for config files using attributes
-    # directly.
-    self.lv_list = self._logical_volumes
-
     # A list of dicts with the snapshot paths and where they should be mounted.
     self._lv_snapshots = list()
     # Mount the snapshots in a directory named for this job's label.
@@ -54,6 +50,19 @@ class LVMSourceMixIn(object):
     self.add_pre_hook(self._mount_snapshots)
     self.add_post_hook(self._umount_snapshots)
     self.add_post_hook(self._delete_snapshots)
+
+  # Maintain backward compatibility with old hooks interface.
+  @property
+  def lv_list(self):
+    self.logger.warning(
+        'lv_list is deprecated. Please use add_volume() instead.')
+    return self._logical_volumes
+
+  @lv_list.setter
+  def lv_list(self, value):
+    self.logger.warning(
+        'lv_list is deprecated. Please use add_volume() instead.')
+    self._logical_volumes = value
 
   def add_volume(self, name, mount_point, mount_options=None):
     """Adds logical volume to list of volumes to be backed up.

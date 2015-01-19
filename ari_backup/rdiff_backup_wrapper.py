@@ -89,34 +89,50 @@ class RdiffBackup(workflow.BaseWorkflow):
   # Provide backward compatibility for config files using attributes directly.
   @property
   def include_dir_list(self):
+    self.logger.warning(
+        'include_dir_list is deprecated. Please use include_dir() instead.')
     return self._include_dirs
 
   @include_dir_list.setter
   def include_dir_list(self, value):
+    self.logger.warning(
+        'include_dir_list is deprecated. Please use include_dir() instead.')
     self._include_dirs = value
 
   @property
   def include_file_list(self):
+    self.logger.warning(
+        'include_file_list is deprecated. Please use include_file() instead.')
     return self._include_files
 
   @include_file_list.setter
   def include_file_list(self, value):
+    self.logger.warning(
+        'include_file_list is deprecated. Please use include_file() instead.')
     self._include_files = value
 
   @property
   def exclude_dir_list(self):
-    return self._exclude_files
+    self.logger.warning(
+        'exclude_dir_list is deprecated. Please use exclude_dir() instead.')
+    return self._exclude_dirs
 
   @exclude_dir_list.setter
   def exclude_dir_list(self, value):
+    self.logger.warning(
+        'exclude_dir_list is deprecated. Please use exclude_dir() instead.')
     self._exclude_dirs = value
 
   @property
   def exclude_file_list(self):
+    self.logger.warning(
+        'exclude_file_list is deprecated. Please use exclude_file() instead.')
     return self._exclude_files
 
   @exclude_file_list.setter
   def exclude_file_list(self, value):
+    self.logger.warning(
+        'exclude_file_list is deprecated. Please use exclude_file() instead.')
     self._exclude_files = value
 
   def _check_required_flags(self):
