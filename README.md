@@ -2,8 +2,8 @@
 
 ari-backup is a lightweight generic workflow engine designed specifically
 for running automated backups. It includes modules with support for running
-backups using [http://www.nongnu.org/rdiff-backup/ rdiff-backup], rdiff-backup
-with LVM snapshots, and syncing files to [http://en.wikipedia.org/wiki/ZFS ZFS]
+backups using [rdiff-backup](http://www.nongnu.org/rdiff-backup/), rdiff-backup
+with LVM snapshots, and syncing files to [ZFS](http://en.wikipedia.org/wiki/ZFS)
 datasets using rsync. Features include:
 * Centralzed configuration
 * Support for backing up local and remote hosts
