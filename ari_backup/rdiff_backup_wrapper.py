@@ -78,11 +78,6 @@ class RdiffBackup(workflow.BaseWorkflow):
     self._exclude_dirs = list()
     self._exclude_files = list()
 
-    self.include_dir_list = self._include_dirs
-    self.include_file_list = self._include_files
-    self.exclude_dir_list = self._exclude_dirs
-    self.exclude_file_list = self._exclude_files
-
     self._check_required_flags()
     self._check_required_binaries()
 
