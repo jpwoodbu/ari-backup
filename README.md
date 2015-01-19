@@ -1,3 +1,12 @@
+# This is seriously forked
+This repo is forked from the [AmericanResearchInstitute/ari-backup](https://github.com/AmericanResearchInstitute/ari-backup)
+repo, but it should be considered the canonical repo for ari-backup.
+ARI open-sourced the original codebase long ago and went out of business soon
+thereafter. There will not likely be any further development on this project
+under the [AmericanResearchInstitute organization](https://github.com/AmericanResearchInstitute)
+but development on ari-backup within this repo is still active and ongoing.
+For more ari-backup history, see the last section in this README.
+
 # ari-backup
 
 ari-backup is a lightweight generic workflow engine designed specifically
