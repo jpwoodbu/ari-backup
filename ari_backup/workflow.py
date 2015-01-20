@@ -291,7 +291,7 @@ class BaseWorkflow(object):
     else:
       self.logger.info('processing post-job hooks...')
 
-    for task in self.post_job_hook_list:
+    for task in self._post_job_hooks:
       # Let's do some assignments for readability.
       hook = task[0]
       kwargs = task[1]
