@@ -52,17 +52,13 @@ your Linux distribution.
 * [PyYAML](https://pypi.python.org/pypi/PyYAML)
 * [rdiff-backup](http://www.nongnu.org/rdiff-backup/)
 
-ari-backup requires [PyYAML](http://pyyaml.org/) which is not a pure Python
-library, so you may prefer providing that dependency with a system package
-(python-yaml on Debian/Ubuntu).
-
-To install the ari\_backup package to your system, run this as `root`:
+To install the `ari_backup` package to your system, run this as `root`:
 ```
 pip install git+git://github.com/jpwoodbu/ari-backup.git
 ```
 
 Before you can execute a backup job, there are a few files and directories that
-need to be setup. At this time, the configuration file for ari-backup is always
+need to be set up. At this time, the configuration file for ari-backup is always
 read from `/etc/ari-backup/ari-backup.conf.yaml`. For this demo put this into
 the `ari-backup.conf.yaml` file:
 ```
@@ -122,7 +118,7 @@ file metadata.
 
 For a more exciting demo, let's backup a remote host. We'll be using ssh to
 authenticate to the remote host and public key authentication is the only
-method supported by ari-backup. Be sure to have your keys setup for both the
+method supported by ari-backup. Be sure to have your keys set up for both the
 user that will run ari-backup and the user that we'll use to connect to the
 remote host. For this demo, we're going to use the user `backups`.
 
@@ -161,7 +157,7 @@ $ ./ari-backup-remote-demo --debug --dry_run
 If everything looks good, run it without any flags. Again, no output to the
 console means everthing worked. Check the syslog and your
 `/backup-store/kif_backup` directory to see the results. Once you've got
-your ssh keys setup, the only thing different about remote backups is the value
+your ssh keys set up, the only thing different about remote backups is the value
 you put in the source_hostname parameter.
 
 ## Settings and flags
@@ -229,7 +225,7 @@ user    0m45.595s
 sys     0m8.253s
 ```
 
-If you have cron setup to email you when there's output like this, then you'll
+If you have cron set up to email you when there's output like this, then you'll
 have a handy (or annoying) email reporting whether your backups ran
 successfully each time.
 
