@@ -282,7 +282,43 @@ backup.run()
 
 ### zfs
 
-TODO(jpwoodbu) Write up examples of how to use the ZFSLVMBackup extension.
+The zfs module provides a way to backup hosts to a machine which uses
+[ZFS](http://en.wikipedia.org/wiki/ZFS) for its backup-store. Rather than use
+rdiff-backup to keep historical datapoints, history is kept in the form of ZFS
+snapshots. [rsync](http://en.wikipedia.org/wiki/Rsync) is used to sync files on
+the source host to the ZFS-based host.
+
+This module was built for a very specific use case which involved first making
+LVM snapshots on the source host before running the backup. Currently, that is
+the only use case supported by the zfs module.
+
+Here's an example config using the zfs module:
+```
+#!/usr/bin/env python
+import ari_backup
+
+backup = ari_backup.ZFSLVMBackup(
+    label='mybackup',
+    source_hostname='db-server',
+    rsync_dst='zfs-backup-server:/zpool-0/backups/ari-backup/mybackup',
+    zfs_hostname='zfs-backup-server',
+    dataset_name='zpool-0/backups/ari-backup/mybackup',
+    snapshot_expiration_days=60
+)
+
+backup.add_volume('vg0/root', '/')
+backup.run()
+```
+There's a lof of familiar arguments here and a few new ones.
+* **rsync_dst**: destination argument passed to the rsync command in *<hostname>:</path/to/backup/dir>* format.
+* **zfs_hostname**: hostname of the machine storing the backups to ZFS. When using ZFSLVMBackup, the backups are not necessarily stored on the machine running ari-backup.
+* **dataset_name**: ZFS path to the dataset in *<pool>/<path/to/dataset>* format.
+* **snapshot_expiration_days**: the number of days at which a snapshot expires and will be destroyed. This is similar to the RdiffBackup classes's *remove_older_than_timespec*, but in this case the value is simply an integer respresenting a number of days.
+
+Notice that *include_dir()* was not called. Backing up the entire file system is
+implicit. The effect is as if *include_dir('/')* was was called. This limitation
+is due to this feature being made specifically to meet the needs of its author.
+Contributions to enhance this module are strongly encouraged! :)
 
 ## Running commands before or after a backup
 
