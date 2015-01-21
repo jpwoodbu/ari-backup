@@ -310,9 +310,9 @@ backup.add_volume('vg0/root', '/')
 backup.run()
 ```
 There's a lof of familiar arguments here and a few new ones.
-* **rsync_dst**: destination argument passed to the rsync command in *<hostname>:</path/to/backup/dir>* format.
+* **rsync_dst**: destination argument passed to the rsync command in *\<hostname\>:\</path/to/backup/dir\>* format.
 * **zfs_hostname**: hostname of the machine storing the backups to ZFS. When using ZFSLVMBackup, the backups are not necessarily stored on the machine running ari-backup.
-* **dataset_name**: ZFS path to the dataset in *<pool>/<path/to/dataset>* format.
+* **dataset_name**: ZFS path to the dataset in *\<pool\>/\<path/to/dataset\>* format.
 * **snapshot_expiration_days**: the number of days at which a snapshot expires and will be destroyed. This is similar to the RdiffBackup classes's *remove_older_than_timespec*, but in this case the value is simply an integer respresenting a number of days.
 
 Notice that *include_dir()* was not called. Backing up the entire file system is
