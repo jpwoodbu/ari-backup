@@ -175,11 +175,11 @@ class LVMSourceMixIn(object):
         backup. Default is None. This method does not use this arg but must
         accept it as part of the post hook API.
     """ 
-    # TODO(jpwoodbu) If the user doesn't put '/' in their _include_dirs,
-    # then we'll end up with directories around where the snapshots are mounted
-    # that will not get cleaned up. We should probably add functionality to
-    # make sure the "label" directory is recursively removed. Check out
-    # shutil.rmtree() to help resolve this issue.
+    # TODO(jpwoodbu) If the user doesn't put '/' in their _includes, then we'll
+    # end up with directories around where the snapshots are mounted that will
+    # not get cleaned up. We should probably add functionality to make sure the
+    # "label" directory is recursively removed. Check out shutil.rmtree() to
+    # help resolve this issue.
 
     self.logger.info('umounting LVM snapshots...')
     # We need a local copy of the _lv_snapshots list to muck with in this
@@ -228,19 +228,16 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     """Run backup of LVM snapshots.
         
     This method overrides the base class's _run_custom_workflow() so that we
-    can modify the include_dir_list and exclude_dir_list to have the
+    can modify the includes and excludes to have the
     _snapshot_mount_point_base_path prefixed to their paths. This allows the
-    user to configure what to backup from the perspective of the file system
-    on the snapshot itself.
+    user to configure what to backup from the perspective of the file system on
+    the snapshot itself.
     """
     self.logger.debug('RdiffLVMBackup._run_custom_workflow started')
-    # Cook the self._include_dirs and self._exclude_dirs so that the src paths
-    # include the mount path for the logical volumes.
-    self._include_dirs = self._prefix_mount_point_to_paths(self._include_dirs)
-    self._exclude_dirs = self._prefix_mount_point_to_paths(self._exclude_dirs)
-
-    # We don't support include_file_list and exclude_file_list in this class as
-    # it would take extra effort and it's not likely to be used.
+    # Cook the self._includes and self._excludes so that the src paths include
+    # the mount path for the logical volumes.
+    self._includes = self._prefix_mount_point_to_paths(self._includes)
+    self._excludes = self._prefix_mount_point_to_paths(self._excludes)
 
     # After changing the top-level src dir to where the snapshots are mounted,
     # have the base class perform an rdiff-backup.

@@ -33,7 +33,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         source_hostname='unused', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/unused')
+    backup.include('/unused')
     backup.run()
 
     self.assertFalse(mock_remove_older_than.called)
@@ -48,7 +48,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         source_hostname='unused', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/unused')
+    backup.include('/unused')
     backup.run()
 
     mock_remove_older_than.assert_called_once_with(
@@ -63,7 +63,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         source_hostname='unused', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/unused')
+    backup.include('/unused')
     backup.run()
 
     mock_command_runner.run.assert_called_with(
@@ -76,16 +76,16 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
       backup = rdiff_backup_wrapper.RdiffBackup(
           label='unused', source_hostname='unused', settings_path=None)
       
-  def testIncludeDir_pathAddedToIncludeDirTracker(self):
+  def testInclude_pathAddedToIncludesTracker(self):
     backup = rdiff_backup_wrapper.RdiffBackup(
         label='unused', source_hostname='unused', settings_path=None)
 
-    backup.include_dir('/etc')
-    backup.include_dir('/var')
+    backup.include('/etc')
+    backup.include('/var')
 
-    self.assertEqual(backup._include_dirs, ['/etc', '/var'])
+    self.assertEqual(backup._includes, ['/etc', '/var'])
 
-  def testIncludeDir_backupIncludesDirs(self):
+  def testInclude_backupIncludesPaths(self):
     FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
     FLAGS.backup_store_path = '/fake/backup-store'
     FLAGS.top_level_src_dir = '/'
@@ -96,15 +96,15 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         label='fake_backup', source_hostname='localhost', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/etc')
-    backup.include_dir('/var')
+    backup.include('/etc')
+    backup.include('/var')
     backup.run()
 
     mock_command_runner.run.assert_called_once_with(
         ['/fake/rdiff-backup', '--include', '/etc', '--include', '/var',
          '--exclude', '**', '/', '/fake/backup-store/fake_backup'], False)
 
-  def testExcludeDir_backupExcludesDirs(self):
+  def testExclude_backupExcludesPaths(self):
     FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
     FLAGS.backup_store_path = '/fake/backup-store'
     FLAGS.top_level_src_dir = '/'
@@ -115,54 +115,13 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         label='fake_backup', source_hostname='localhost', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/var')
-    backup.exclude_dir('/var/cache')
+    backup.include('/var')
+    backup.exclude('/var/cache')
     backup.run()
 
     mock_command_runner.run.assert_called_once_with(
         ['/fake/rdiff-backup', '--exclude', '/var/cache', '--include', '/var',
          '--exclude', '**', '/', '/fake/backup-store/fake_backup'], False)
-
-  def testIncludeFile_backupIncludesFiles(self):
-    FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
-    FLAGS.backup_store_path = '/fake/backup-store'
-    FLAGS.top_level_src_dir = '/'
-    mock_command_runner = test_lib.GetMockCommandRunner()
-    # Note that setting source_hostname to 'localhost' prevents the command
-    # that is run from being prefixed with an ssh command.
-    backup = rdiff_backup_wrapper.RdiffBackup(
-        label='fake_backup', source_hostname='localhost', settings_path=None,
-        command_runner=mock_command_runner)
-
-    backup.include_file('/really_important_file1')
-    backup.include_file('/really_important_file2')
-    backup.run()
-
-    mock_command_runner.run.assert_called_once_with(
-        ['/fake/rdiff-backup',
-         '--include-filelist', '/really_important_file1', '--include-filelist',
-         '/really_important_file2', '--exclude', '**', '/',
-         '/fake/backup-store/fake_backup'], False)
-
-  def testExcludeFile_backupExcludesFiles(self):
-    FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
-    FLAGS.backup_store_path = '/fake/backup-store'
-    FLAGS.top_level_src_dir = '/'
-    mock_command_runner = test_lib.GetMockCommandRunner()
-    # Note that setting source_hostname to 'localhost' prevents the command
-    # that is run from being prefixed with an ssh command.
-    backup = rdiff_backup_wrapper.RdiffBackup(
-        label='fake_backup', source_hostname='localhost', settings_path=None,
-        command_runner=mock_command_runner)
-
-    backup.include_dir('/etc')
-    backup.exclude_file('/etc/huge_useless_file')
-    backup.run()
-
-    mock_command_runner.run.assert_called_once_with(
-        ['/fake/rdiff-backup', '--exclude-filelist', '/etc/huge_useless_file',
-         '--include', '/etc', '--exclude', '**', '/',
-         '/fake/backup-store/fake_backup'], False)
 
   def testRemoveOlderThan_errorCaseIsTrue_doesNotTrimBackups(self):
     mock_command_runner = test_lib.GetMockCommandRunner()
@@ -200,7 +159,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         label='fake_backup', source_hostname='fake_host', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/fake_dir')
+    backup.include('/fake_dir')
     backup.run()
 
     mock_command_runner.run.assert_called_once_with(
@@ -220,7 +179,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         label='fake_backup', source_hostname='fake_host', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/fake_dir')
+    backup.include('/fake_dir')
     backup.run()
 
     mock_command_runner.run.assert_called_once_with(
@@ -236,7 +195,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         label='fake_backup', source_hostname='localhost', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/fake_dir')
+    backup.include('/fake_dir')
     backup.run()
 
     mock_command_runner.run.assert_called_once_with(
@@ -254,7 +213,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         label='fake_backup', source_hostname='fake_host', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/fake_dir')
+    backup.include('/fake_dir')
     backup.run()
 
     mock_command_runner.run.assert_called_once_with(
@@ -272,7 +231,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         label='fake_backup', source_hostname='localhost', settings_path=None,
         command_runner=mock_command_runner)
 
-    backup.include_dir('/fake_dir')
+    backup.include('/fake_dir')
     backup.run()
 
     mock_command_runner.run.assert_called_once_with(

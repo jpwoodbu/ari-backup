@@ -73,10 +73,8 @@ class RdiffBackup(workflow.BaseWorkflow):
       self.remove_older_than_timespec = remove_older_than_timespec
 
     # Initialize include and exclude lists.
-    self._include_dirs = list()
-    self._include_files = list()
-    self._exclude_dirs = list()
-    self._exclude_files = list()
+    self._includes = list()
+    self._excludes = list()
 
     self._check_required_flags()
     self._check_required_binaries()
@@ -89,50 +87,36 @@ class RdiffBackup(workflow.BaseWorkflow):
   @property
   def include_dir_list(self):
     self.logger.warning(
-        'include_dir_list is deprecated. Please use include_dir() instead.')
-    return self._include_dirs
+        'include_dir_list is deprecated. Please use include() instead.')
+    return self._includes
 
   @include_dir_list.setter
   def include_dir_list(self, value):
     self.logger.warning(
-        'include_dir_list is deprecated. Please use include_dir() instead.')
-    self._include_dirs = value
-
-  @property
-  def include_file_list(self):
-    self.logger.warning(
-        'include_file_list is deprecated. Please use include_file() instead.')
-    return self._include_files
-
-  @include_file_list.setter
-  def include_file_list(self, value):
-    self.logger.warning(
-        'include_file_list is deprecated. Please use include_file() instead.')
-    self._include_files = value
+        'include_dir_list is deprecated. Please use include() instead.')
+    self._includes = value
 
   @property
   def exclude_dir_list(self):
     self.logger.warning(
-        'exclude_dir_list is deprecated. Please use exclude_dir() instead.')
-    return self._exclude_dirs
+        'exclude_dir_list is deprecated. Please use exclude() instead.')
+    return self._excludes
 
   @exclude_dir_list.setter
   def exclude_dir_list(self, value):
     self.logger.warning(
-        'exclude_dir_list is deprecated. Please use exclude_dir() instead.')
-    self._exclude_dirs = value
+        'exclude_dir_list is deprecated. Please use exclude() instead.')
+    self._excludes = value
 
-  @property
-  def exclude_file_list(self):
+  def include_dir(self, path):
     self.logger.warning(
-        'exclude_file_list is deprecated. Please use exclude_file() instead.')
-    return self._exclude_files
+        'include_dir() is deprecated. Please use include() instead.')
+    self.include(path)
 
-  @exclude_file_list.setter
-  def exclude_file_list(self, value):
+  def exclude_dir(self, path):
     self.logger.warning(
-        'exclude_file_list is deprecated. Please use exclude_file() instead.')
-    self._exclude_files = value
+        'exclude_dir() is deprecated. Please use exclude() instead.')
+    self.exclude(path)
 
   def _check_required_flags(self):
     if self.backup_store_path is None:
@@ -143,49 +127,21 @@ class RdiffBackup(workflow.BaseWorkflow):
       raise Exception('rdiff-backup does not appear to be installed or '
                       'is not executable')
 
-  def include_dir(self, path):
-    """Add a directory to be included in the backup.
-
-    The provided path is added to the top_level_src_dir when considering
-    whether files should be included in the backup.
+  def include(self, path):
+    """Add a path to be included in the backup.
 
     Args:
-      path: str, directory path to include in the backup.
+      path: str, path to include in the backup.
     """
-    self._include_dirs.append(path)
+    self._includes.append(path)
 
-  def include_file(self, path):
-    """Add a file to be included in the backup.
-
-    The provided path is added to the top_level_src_dir when considering
-    whether files should be included in the backup.
+  def exclude(self, path):
+    """Add a path to be excluded from the backup.
 
     Args:
-      path: str, file path to include in the backup.
+      path: str, path to exclude from the backup.
     """
-    self._include_files.append(path)
-
-  def exclude_dir(self, path):
-    """Add a directory to be excluded in the backup.
-
-    The provided path is added to the top_level_src_dir when considering
-    whether files should be included in the backup.
-
-    Args:
-      path: str, directory path to exclude from the backup.
-    """
-    self._exclude_dirs.append(path)
-
-  def exclude_file(self, path):
-    """Add a file to be excluded in the backup.
-
-    The provided path is added to the top_level_src_dir when considering
-    whether files should be included in the backup.
-
-    Args:
-      path: str, file path to exclude from the backup.
-    """
-    self._exclude_files.append(path)
+    self._excludes.append(path)
 
   def _run_custom_workflow(self):
     """Run rdiff-backup job.
@@ -210,22 +166,14 @@ class RdiffBackup(workflow.BaseWorkflow):
     if not self.source_hostname == 'localhost' and not self.ssh_compression:
       args.append('--ssh-no-compression')
 
-    # Add exclude and includes to our arguments
-    for exclude_dir in self._exclude_dirs:
+    # Add exclude and includes to our arguments...
+    for path in self._excludes:
       args.append('--exclude')
-      args.append(exclude_dir)
+      args.append(path)
 
-    for exclude_file in self._exclude_files:
-      args.append('--exclude-filelist')
-      args.append(exclude_file)
-
-    for include_dir in self._include_dirs:
+    for path in self._includes:
       args.append('--include')
-      args.append(include_dir)
-
-    for include_file in self._include_files:
-      args.append('--include-filelist')
-      args.append(include_file)
+      args.append(path)
 
     # Exclude everything else
     args += ['--exclude', '**']

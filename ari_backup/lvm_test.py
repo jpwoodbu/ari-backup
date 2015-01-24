@@ -346,10 +346,10 @@ class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         command_runner=mock_command_runner)
     
     backup.add_volume('fake_volume_group/fake_volume', '/var')
-    backup.include_dir('/var')
+    backup.include('/var')
     backup.run()
 
-    self.assertEqual(backup._include_dirs, ['/fake_root/fake_backup/var'])
+    self.assertEqual(backup._includes, ['/fake_root/fake_backup/var'])
 
   def testRunCustomWorkflow_prefixesExcludeDirs(self):
     FLAGS.snapshot_mount_root = '/fake_root'
@@ -359,12 +359,12 @@ class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         command_runner=mock_command_runner)
     
     backup.add_volume('fake_volume_group/fake_volume', '/var')
-    backup.include_dir('/var')
-    backup.exclude_dir('/var/cache')
+    backup.include('/var')
+    backup.exclude('/var/cache')
     backup.run()
 
     self.assertEqual(
-        backup._exclude_dirs, ['/fake_root/fake_backup/var/cache'])
+        backup._excludes, ['/fake_root/fake_backup/var/cache'])
 
   def testRunCustomWorkflow_updatesTopLevelSrcDirToSnapshotMountPointBasePath(
       self):
