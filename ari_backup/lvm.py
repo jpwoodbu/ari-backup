@@ -84,7 +84,7 @@ class LVMSourceMixIn(object):
 
   def _create_snapshots(self):
     """Creates snapshots of all the volumns added with add_volume()."""
-    self.logger.info('creating LVM snapshots...')
+    self.logger.info('Creating LVM snapshots...')
     for volume in self._logical_volumes:
       # TODO(jpwoodbu) This try/except won't ne necessary when the deprecated
       # interface to the self.lv_list is removed.
@@ -122,7 +122,7 @@ class LVMSourceMixIn(object):
         backup. Default is None. This method does not use this arg but must
         accept it as part of the post hook API.
     """ 
-    self.logger.info('deleting LVM snapshots...')
+    self.logger.info('Deleting LVM snapshots...')
     for snapshot in self._lv_snapshots:
       if snapshot['created']:
         lv_path = snapshot['lv_path']
@@ -141,7 +141,7 @@ class LVMSourceMixIn(object):
 
     TODO(jpwoodbu) Add mount_options to documentation for backup config files.
     """
-    self.logger.info('mounting LVM snapshots...')
+    self.logger.info('Mounting LVM snapshots...')
     for snapshot in self._lv_snapshots:
       lv_path = snapshot['lv_path']
       device_path = '/dev/' + lv_path
@@ -181,7 +181,7 @@ class LVMSourceMixIn(object):
     # "label" directory is recursively removed. Check out shutil.rmtree() to
     # help resolve this issue.
 
-    self.logger.info('umounting LVM snapshots...')
+    self.logger.info('Umounting LVM snapshots...')
     # We need a local copy of the _lv_snapshots list to muck with in this
     # method.
     local_lv_snapshots = copy.copy(self._lv_snapshots)
@@ -233,7 +233,7 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     user to configure what to backup from the perspective of the file system on
     the snapshot itself.
     """
-    self.logger.debug('RdiffLVMBackup._run_custom_workflow started')
+    self.logger.debug('RdiffLVMBackup._run_custom_workflow started.')
     # Cook the self._includes and self._excludes so that the src paths include
     # the mount path for the logical volumes.
     self._includes = self._prefix_mount_point_to_paths(self._includes)
@@ -244,4 +244,4 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     self.top_level_src_dir = self._snapshot_mount_point_base_path
     super(RdiffLVMBackup, self)._run_custom_workflow()
 
-    self.logger.debug('RdiffLVMBackup._run_custom_workflow completed')
+    self.logger.debug('RdiffLVMBackup._run_custom_workflow completed.')

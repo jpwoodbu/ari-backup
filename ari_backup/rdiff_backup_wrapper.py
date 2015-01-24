@@ -149,7 +149,7 @@ class RdiffBackup(workflow.BaseWorkflow):
     Builds an argument list for a full rdiff-backup command line based on the
     configuration in the RdiffBackup instance.
     """ 
-    self.logger.debug('_run_custom_workflow started')
+    self.logger.debug('_run_custom_workflow started.')
     # Init our arguments list with the path to rdiff-backup.
     # This will be in the format we'd normally pass to the command-line
     # e.g. [ '--include', '/dir/to/include', '--exclude',
@@ -194,7 +194,7 @@ class RdiffBackup(workflow.BaseWorkflow):
 
     # Rdiff-backup GO!
     self.run_command(args)
-    self.logger.debug('_run_backup completed')
+    self.logger.debug('_run_backup completed.')
 
   def _remove_older_than(self, timespec, error_case):
     """Trims increments older than timespec.
@@ -210,7 +210,7 @@ class RdiffBackup(workflow.BaseWorkflow):
       error_case: bool, whether an error has occurred during the backup.
     """ 
     if not error_case:
-      self.logger.info('remove_older_than %s started' % timespec)
+      self.logger.info('remove_older_than %s started.' % timespec)
 
       args = [
           self.rdiff_backup_path,
@@ -221,4 +221,4 @@ class RdiffBackup(workflow.BaseWorkflow):
       ]
 
       self.run_command(args)
-      self.logger.info('remove_older_than %s completed' % timespec)
+      self.logger.info('remove_older_than %s completed.' % timespec)

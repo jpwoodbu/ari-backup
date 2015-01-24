@@ -95,7 +95,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     """Run rsync backup of LVM snapshot to ZFS dataset."""
     # TODO(jpwoodbu) Consider throwing an exception if we see things in the
     # include or exclude lists since we don't use them in this class.
-    self.logger.debug('ZFSLVMBackup._run_custom_workflow started')
+    self.logger.debug('ZFSLVMBackup._run_custom_workflow started.')
 
     # Since we're dealing with ZFS datasets, let's always exclude the .zfs
     # directory in our rsync options.
@@ -108,7 +108,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
 
     command = [self.rsync_path] + rsync_options + [rsync_src, self.rsync_dst]
     self.run_command(command, self.source_hostname)
-    self.logger.debug('ZFSLVMBackup._run_custom_workflow completed')
+    self.logger.debug('ZFSLVMBackup._run_custom_workflow completed.')
 
   def _create_zfs_snapshot(self, error_case):
     """Creates a new ZFS snapshot of our destination dataset.
@@ -126,7 +126,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
       error_case: bool, whether an error has occurred during the backup.
     """
     if not error_case:
-      self.logger.info('creating ZFS snapshot...')
+      self.logger.info('Creating ZFS snapshot...')
       timestamp = self._get_current_datetime().strftime(
           self.zfs_snapshot_timestamp_format)
       snapshot_name = self.zfs_snapshot_prefix + timestamp
@@ -199,7 +199,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
       error_case: bool, whether an error has occurred during the backup.
     """
     if not error_case:
-      self.logger.info('looking for expired ZFS snapshots...')
+      self.logger.info('Looking for expired ZFS snapshots...')
       snapshots = self._find_snapshots_older_than(days)
       # Sentinel value used to log if we destroyed no snapshots.
       snapshots_destroyed = False
@@ -209,7 +209,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
         command = ['zfs', 'destroy', snapshot]
         self.run_command(command, self.zfs_hostname)
         snapshots_destroyed = True
-        self.logger.info('{snapshot} destroyed'.format(snapshot=snapshot))
+        self.logger.info('{snapshot} destroyed.'.format(snapshot=snapshot))
 
       if not snapshots_destroyed:
-        self.logger.info('found no expired ZFS snapshots')
+        self.logger.info('Found no expired ZFS snapshots.')

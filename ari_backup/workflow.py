@@ -261,9 +261,8 @@ class BaseWorkflow(object):
 
   def _process_pre_job_hooks(self):
     """Executes pre-job hook functions.""" 
-    self.logger.info('processing pre-job hooks...')
+    self.logger.info('Processing pre-job hooks...')
     for task in self._pre_job_hooks:
-      # Let's do some assignments for readability.
       hook = task[0]
       kwargs = task[1]
       hook(**kwargs)
@@ -287,12 +286,11 @@ class BaseWorkflow(object):
         backup.
     """
     if error_case:
-      self.logger.error('processing post-job hooks for error case...')
+      self.logger.error('Processing post-job hooks for error case...')
     else:
-      self.logger.info('processing post-job hooks...')
+      self.logger.info('Processing post-job hooks...')
 
     for task in self._post_job_hooks:
-      # Let's do some assignments for readability.
       hook = task[0]
       kwargs = task[1]
       kwargs['error_case'] = error_case
@@ -334,7 +332,7 @@ class BaseWorkflow(object):
     elif isinstance(command, list):
       shell = False
     else:
-      raise TypeError('run_command: command arg must be str or list')
+      raise TypeError('run_command: command arg must be of type str or list.')
 
     # Add SSH arguments if this is a remote command.
     if host != 'localhost':
@@ -414,27 +412,27 @@ class BaseWorkflow(object):
       A bool for whether the job ran successfully or not.
     """
     error_case = False
+    self.logger.info('ari-backup started.')
     if self.dry_run:
       self.logger.info('Running in dry_run mode.')
-    self.logger.info('started')
     try:
       self._process_pre_job_hooks()
-      self.logger.info('data backup started...')
+      self.logger.info('Data backup started.')
       self._run_custom_workflow()
-      self.logger.info('data backup complete')
+      self.logger.info('Data backup complete.')
     except KeyboardInterrupt:
       error_case = True
       # using error level here so that these messages will
       # print to the console
-      self.logger.error('backup job cancelled by user')
-      self.logger.error("let's try to clean up...")
+      self.logger.error('Backup job cancelled by user.')
+      self.logger.error("Trying to clean up...")
     except Exception, e:
       error_case = True
       self.logger.error(str(e))
-      self.logger.error("let's try to clean up...")
+      self.logger.error("Trying to clean up...")
     finally:
       self._process_post_job_hooks(error_case)
-      self.logger.info('stopped')
+      self.logger.info('ari-backup stopped.')
       if error_case:
         return False
       else:
