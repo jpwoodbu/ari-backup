@@ -74,7 +74,7 @@ into a file named `ari-backup-local-demo`:
 import ari_backup
 
 backup = ari_backup.RdiffBackup(label='my_backup', source_hostname='localhost')
-backup.include_dir('/music')
+backup.include('/music')
 backup.run()
 ```
 
@@ -114,6 +114,14 @@ as well as a `rdiff-backup-data` directory. The `rdiff-backup-data` is where
 rdiff-backup stores its own data like the reverse increments, statistics, and
 file metadata.
 
+Note that paths passed to `include()` or `exclude()` can be either directories
+or files. Those paths are passed as values to the `--include` and `--exclude`
+flags of rdiff-backup respectively. Paths passed to `include()` or `exclude()`
+are passed to rdiff-backup in the order in which they're added, except that all
+paths passed to `exclude()` are passed to rdiff-backup before paths to
+`include()`. This makes sure everything you wish to exclude is actually
+excluded before an include rule takes precedence.
+
 ### Backing up Remote Hosts
 
 For a more exciting demo, let's backup a remote host. We'll be using ssh to
@@ -145,7 +153,7 @@ named `ari-backup-remote-demo` with this content:
 import ari_backup
 
 backup = ari_backup.RdiffBackup(label='kif_backup', source_hostname='kif')
-backup.include_dir('/music')
+backup.include('/music')
 backup.run()
 ```
 
@@ -194,7 +202,7 @@ Finally, you can override it within the backup config file:
 !/usr/bin/env python
 import ari_backup
 backup = ari_backup.RdiffBackup(label='mybackup', source_hostname='localhost')
-backup.include_dir('/home')
+backup.include('/home')
 backup.remote_user = 'backup_user'
 backup.run()
 ```
@@ -259,7 +267,7 @@ remove increments older than one month, so you set
 `remove_older_than_timespec='1M'`. You specify the LVM volumes and their
 mountpoints on the remote system (you may add more than one LVM volume by
 adding multiple `backup.add_volume()` statements). Finally, specify the
-directories to be backed up with `backup.include_dir()`.  Make a new backup job
+directories to be backed up with `backup.include()`.  Make a new backup job
 file named `ari-backup-remote-lvm-demo` with this content:
 ```
 #!/usr/bin/env python
@@ -272,7 +280,7 @@ backup = ari_backup.RdiffLVMBackup(
 )
 
 backup.add_volume('vg0/root', '/')
-backup.include_dir('/etc')
+backup.include('/etc')
 backup.run()
 ```
 
@@ -311,8 +319,8 @@ There's a lof of familiar arguments here and a few new ones.
 * **dataset_name:** ZFS path to the dataset in *\<pool\>/\<path/to/dataset\>* format.
 * **snapshot_expiration_days:** the number of days at which a snapshot expires and will be destroyed. This is similar to the RdiffBackup classes's `remove_older_than_timespec` argument, but in this case the value is simply an integer respresenting a number of days.
 
-Notice that `include_dir()` was not called. Backing up the entire source file
-system is implicit. The effect is as if `include_dir('/')` was was called. This
+Notice that `include()` was not called. Backing up the entire source file
+system is implicit. The effect is as if `include('/')` was was called. This
 limitation is due to this feature being made specifically to meet the needs of
 its author. Contributions to enhance this module are strongly encouraged! :)
 
@@ -334,7 +342,7 @@ backup = ari_backup.RdiffLVMBackup(
 )
 
 backup.add_volume('vg0/root', '/')
-backup.include_dir('/etc')
+backup.include('/etc')
 
 # Dump database to disk to get a consistent copy.
 backup.run_command(
