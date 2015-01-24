@@ -156,7 +156,7 @@ class LVMSourceMixIn(object):
       # If where we want to mount our LV is already a mount point then
       # let's back out.
       if os.path.ismount(mount_path):
-        raise Exception('{mount_path} is already a mount point'.format(
+        raise Exception('{mount_path} is already a mount point.'.format(
             mount_path=mount_path))
 
       # mount the LV, possibly with mount options

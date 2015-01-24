@@ -120,12 +120,12 @@ class RdiffBackup(workflow.BaseWorkflow):
 
   def _check_required_flags(self):
     if self.backup_store_path is None:
-      raise Exception('backup_store_path setting is not set')
+      raise Exception('backup_store_path setting is not set.')
 
   def _check_required_binaries(self):
     if not os.access(self.rdiff_backup_path, os.X_OK):
       raise Exception('rdiff-backup does not appear to be installed or '
-                      'is not executable')
+                      'is not executable.')
 
   def include(self, path):
     """Add a path to be included in the backup.

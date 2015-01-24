@@ -70,7 +70,7 @@ class CommandRunner(object):
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE)
     except IOError:
-      raise CommandNotFound('Unable to execute/find {}'.format(args))
+      raise CommandNotFound('Unable to execute/find {}.'.format(args))
 
     stdout, stderr = self._process.communicate()
     return stdout, stderr, self._process.returncode
