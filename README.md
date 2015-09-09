@@ -382,8 +382,8 @@ argument or leave out the host argument entirely.
 
 ## History and Namesake
 
-ari-backup gets its name from the [American Research
-Institute](http://americanri.com) where it was originally written in bash. As
+ari-backup gets its name from the American Research Institute where it was
+originally written in bash. As
 [rdiff-backup](http://www.nongnu.org/rdiff-backup/) was our software of choice
 to backup our Linux systems, we needed some sort of scripting around running
 rdiff-backup on a schedule. We could write a script that performed all our
