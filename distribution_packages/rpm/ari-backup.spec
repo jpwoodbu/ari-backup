@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name: ari-backup
-Version: 0.9.2
+Version: 1.0.10
 Release: 1%{?dist}
 Summary: A helpful wrapper around rdiff-backup
 Group: Development/Languages
@@ -13,6 +13,7 @@ BuildArch: noarch
 BuildRequires: python-setuptools
 BuildRequires: rpm-python
 Requires: crontabs
+Requires: python-gflags
 Requires: python-setuptools
 Requires: PyYAML
 Requires: rdiff-backup
@@ -53,4 +54,4 @@ rm -rf %{buildroot}
 %config(noreplace) %{_sysconfdir}/%{name}/jobs.d/*
 %defattr(700,root,root,-)
 %config %{_sysconfdir}/cron.daily/ari-backup
-%doc README.mediawiki LICENSE.txt
+%doc README.md LICENSE.txt
