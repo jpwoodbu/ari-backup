@@ -1,0 +1,5 @@
+--- include/etc/ari-backup/ari-backup.conf.yaml	2015-09-20 00:38:31.612543093 -0400
++++ include/etc/ari-backup/ari-backup.conf.yaml	2015-10-07 11:29:18.580655186 -0400
+@@ -1 +1 @@
+-backup_store_path: /data/rdiffbackup/
++backup_store_path: /var/lib/ari-backup/
