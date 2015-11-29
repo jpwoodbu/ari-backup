@@ -1,6 +1,7 @@
 """Logging configuration for ari_backup package."""
 import logging
 import logging.handlers
+import os
 import sys
 
 
@@ -39,11 +40,13 @@ class Logger(logging.Logger):
       stream_handler.setFormatter(formatter)
       self.addHandler(stream_handler)
 
-    # Emit to syslog, INFO and above, or DEBUG if debug.
-    syslog_handler = logging.handlers.SysLogHandler('/dev/log')
-    if debug:
-        syslog_handler.setLevel(logging.DEBUG)
-    else:
-        syslog_handler.setLevel(logging.INFO)
-    syslog_handler.setFormatter(formatter)
-    self.addHandler(syslog_handler)
+    # On some systems (e.g. docker containers) /dev/log might not be available.
+    if os.access('/dev/log', os.W_OK):
+      # Emit to syslog, INFO and above, or DEBUG if debug.
+      syslog_handler = logging.handlers.SysLogHandler('/dev/log')
+      if debug:
+          syslog_handler.setLevel(logging.DEBUG)
+      else:
+          syslog_handler.setLevel(logging.INFO)
+      syslog_handler.setFormatter(formatter)
+      self.addHandler(syslog_handler)
