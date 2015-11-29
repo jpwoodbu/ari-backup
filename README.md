@@ -51,6 +51,7 @@ your Linux distribution.
 * [python-gflags](https://pypi.python.org/pypi/python-gflags/)
 * [PyYAML](https://pypi.python.org/pypi/PyYAML)
 * [rdiff-backup](http://www.nongnu.org/rdiff-backup/)
+* [python-mock](https://pypi.python.org/pypi/mock) (only needed to run tests)
 
 To install the `ari_backup` package to your system, run this as `root`:
 ```
