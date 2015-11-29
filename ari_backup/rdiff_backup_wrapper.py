@@ -80,8 +80,10 @@ class RdiffBackup(workflow.BaseWorkflow):
     self._check_required_binaries()
 
     if self.remove_older_than_timespec is not None:
-      self.add_post_hook(self._remove_older_than,
-                        {'timespec': self.remove_older_than_timespec})
+      # Using a lambda for late evaluation in case the user overrides the value
+      # of self.remove_older_than_timespec before calling run().
+      kwargs = lambda: {'timespec': self.remove_older_than_timespec}
+      self.add_post_hook(self._remove_older_than, kwargs)
 
   # Provide backward compatibility for config files using attributes directly.
   @property

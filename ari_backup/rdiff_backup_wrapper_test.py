@@ -70,6 +70,25 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         ['/fake/rdiff-backup', '--force', '--remove-older-than', '60D',
          '/fake/backup-store/fake_backup'], False)
 
+  # Test for issue #19.
+  def testRemoveOlderThan_timespecOverriddenViaAttribute_usesOverriddenValue(
+      self):
+    FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
+    FLAGS.backup_store_path = '/fake/backup-store'
+    FLAGS.remove_older_than_timespec = '60D'
+    mock_command_runner = test_lib.GetMockCommandRunner()
+    backup = rdiff_backup_wrapper.RdiffBackup(
+        label='fake_backup', source_hostname='unused', settings_path=None,
+        command_runner=mock_command_runner)
+
+    backup.include('/unused')
+    backup.remove_older_than_timespec = '365D'
+    backup.run()
+
+    mock_command_runner.run.assert_called_with(
+        ['/fake/rdiff-backup', '--force', '--remove-older-than', '365D',
+         '/fake/backup-store/fake_backup'], False)
+
   def testCheckRequiredFlags_backupStorePathNotSet_raisesException(self):
     FLAGS.backup_store_path = None
     with self.assertRaises(Exception):

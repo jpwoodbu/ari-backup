@@ -265,6 +265,9 @@ class BaseWorkflow(object):
     for task in self._pre_job_hooks:
       hook = task[0]
       kwargs = task[1]
+      # Support callbacks for late evaluation of kwargs in hooks.
+      if callable(kwargs):
+        kwargs = kwargs()
       hook(**kwargs)
 
   def _process_post_job_hooks(self, error_case):
@@ -293,6 +296,9 @@ class BaseWorkflow(object):
     for task in self._post_job_hooks:
       hook = task[0]
       kwargs = task[1]
+      # Support callbacks for late evaluation of kwargs in hooks.
+      if callable(kwargs):
+        kwargs = kwargs()
       kwargs['error_case'] = error_case
       hook(**kwargs)
 
