@@ -5,13 +5,14 @@ import setuptools
 
 setuptools.setup(
     name='ari-backup',
-    version='1.0.10',
+    version='1.0.11',
     license='BSD',
     packages=['ari_backup'],
     author='ari-backup team',
     install_requires=[
         'PyYAML>=3.0',
         'python-gflags>=1.5.1',
+        'mock>=1.0.1',
     ],
     classifiers=(
         'Intended Audience :: System Administrators',
