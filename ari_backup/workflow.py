@@ -365,19 +365,28 @@ class BaseWorkflow(object):
         # wants to stop the workflow.
         raise
 
-      if stdout:
-        self.logger.debug(stdout)
-      if stderr:
-        # Warning level should be fine here since we'll also look at
-        # the exitcode.
-        self.logger.warning(stderr)
-
     if exitcode > 0:
       error_message = ('[{host}] A command terminated with errors and '
                        'likely requires intervention. '
-                       'The command attempted was "{command}".').format(
-                           host=host, command=command)
+                       'The command attempted was: {command}.').format(
+                           host=host, command=' '.join(command))
+
+      # Since this is an error, let's make sure the error message gets written
+      # at the error log level so that the user can find it without too much
+      # digging.
+      if stdout:
+        self.logger.error(stdout)
+      if stderr:
+        self.logger.error(stderr)
+
       raise NonZeroExitCode(error_message)
+
+    if stdout:
+      self.logger.debug(stdout)
+    if stderr:
+      # Warning level should be fine here since we're also looking at
+      # the exitcode.
+      self.logger.warning(stderr)
 
     return stdout, stderr
 
