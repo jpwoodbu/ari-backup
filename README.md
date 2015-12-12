@@ -396,7 +396,7 @@ each job was backing up a host. But we didn't want to overcrowd the
 `/etc/cron.daily` directory. So we put all our backup scripts in their own
 directory and put a single file in `/etc/cron.daily` that called our backups
 using [run-parts](http://man.cx/run-parts(8)). We later cooked in the
-[xargs http://en.wikipedia.org/wiki/Xargs) part that made it easy to run backup
+[xargs](http://en.wikipedia.org/wiki/Xargs) part that made it easy to run backup
 jobs concurrently.
 
 When we started to add the LVM snapshot features we decided that porting it to
