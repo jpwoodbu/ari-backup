@@ -319,7 +319,7 @@ class BaseWorkflow(object):
       host: str, the host on which the command will be executed.
 
     Returns:
-      A 2-typle containing the stdout and stderr from the executed process.
+      A 2-tuple containing the stdout and stderr from the executed process.
 
     Raises:
       TypeError: when command arg is not a str or a list.
