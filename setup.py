@@ -12,6 +12,8 @@ setuptools.setup(
     install_requires=[
         'PyYAML>=3.0',
         'python-gflags>=1.5.1',
+    ],
+    tests_require=[
         'mock>=1.0.1',
     ],
     classifiers=(
