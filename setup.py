@@ -5,7 +5,7 @@ import setuptools
 
 setuptools.setup(
     name='ari-backup',
-    version='1.0.11',
+    version='1.0.12',
     license='BSD',
     packages=['ari_backup'],
     author='ari-backup team',
