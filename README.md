@@ -284,6 +284,18 @@ backup.add_volume('vg0/root', '/')
 backup.include('/etc')
 backup.run()
 ```
+#### Specifying mount options
+When using LVM snapshots, you can provide specific mount options for ari-backup
+to use when mounting the snapshots. This is done as an optional string argument
+to the `add_volume` method. The string should use the same form for mount
+options you would use in fstab. Expanding on the above example:
+```
+backup.add_volume('vg0/root', '/', mount_options='noatime,nodiratime')
+```
+#### Known issue with XFS
+Mounting a shapshot of an already mounted XFS file system will likely result in
+an error. See [issue #24](https://github.com/jpwoodbu/ari-backup/issues/24). To
+work around this, you should pass the `nouuid` mount option.
 
 ### zfs
 
