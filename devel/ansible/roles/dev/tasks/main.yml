@@ -1,0 +1,16 @@
+---
+- name: Install dev packages
+  dnf:
+      name: "{{ item }}"
+      state: present
+  with_items:
+      - python-mock
+      - python-nose
+      - python2-flake8
+      - rdiff-backup
+
+- name: Install ari-backup in developer mode
+  command: python /vagrant/setup.py develop
+  args:
+      chdir: /vagrant
+      creates: /usr/lib/python2.7/site-packages/ari-backup.egg-link

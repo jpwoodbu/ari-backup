@@ -1,0 +1,31 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# On your host:
+# git clone https://github.com/jpwoodbu/ari-backup.git
+# cd ari-backup
+# cp Vagrantfile.example Vagrantfile
+# vagrant up
+# vagrant ssh
+# The code is in /vagrant/ inside the guest
+
+
+Vagrant.configure(2) do |config|
+  config.vm.box_url = "https://mirrors.xmission.com/fedora/linux/releases/24/CloudImages/x86_64/images/Fedora-Cloud-Base-Vagrant-24-1.2.x86_64.vagrant-libvirt.box"
+  config.vm.box = "f24-cloud-libvirt"
+  config.vm.synced_folder ".", "/vagrant", type: "sshfs"
+
+  config.vm.provider :libvirt do |domain|
+      domain.cpus = 4
+      domain.graphics_type = "spice"
+      domain.memory = 512
+      domain.video_type = "qxl"
+  end
+
+  # Ansible needs the guest to have these
+  config.vm.provision "shell", inline: "sudo dnf install -y libselinux-python python2-dnf"
+
+  config.vm.provision "ansible" do |ansible|
+      ansible.playbook = "devel/ansible/playbook.yml"
+  end
+end

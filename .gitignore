@@ -1,2 +1,5 @@
 *.pyc
+.eggs
+.vagrant
 ari_backup.egg-info
+Vagrantfile

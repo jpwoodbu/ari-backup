@@ -17,6 +17,7 @@ setuptools.setup(
     tests_require=[
         'mock>=1.0.1',
         'flake8',
+        'nose'
     ],
     test_suite='nose.collector',
     classifiers=(

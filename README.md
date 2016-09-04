@@ -393,6 +393,39 @@ If running a command locally, you can either pass 'localhost' as the host
 argument or leave out the host argument entirely.
 
 
+## Development
+
+If you are interested in contributing to ari-backup, there is a
+Vagrantfile.example to help you get started quickly. All you need is a Linux
+host that supports libvirt, Ansible, and the vagrant-sshfs plugin.
+[Vagrant](https://www.vagrantup.com/) allows contributors to get quickly up and
+running, without dirtying their host computer's environment. It automatically
+configures a guest virtual machine with an ari-backup development setup. Here
+are example commands for a Fedora host machine (you can season to taste for
+other distributions by installing their equivalent packages instead):
+
+```
+$ sudo dnf install ansible vagrant-libvirt vagrant-sshfs
+$ git clone git@github.com:jpwoodbu/ari-backup.git
+$ cd ari-backup
+$ cp Vagrantfile.example Vagrantfile
+$ vagrant up
+```
+
+Once Vagrant finishes provisioning your new development guest, you can ssh into
+it by using the ```vagrant ssh``` command. There is an sshfs code share from
+your checked out code on your host into the /vagrant/ folder on the guest. This
+means you can use your $EDITOR or $IDE of choice on your host, and the guest
+will instantly see the changes. You should use the guest to run the tests, or
+to try out your changes. To run the tests, simply execute
+```python /vagrant/setup.py test```.
+
+Vagrant guests are meant to be throwaway machines (since the state of your code
+is still kept on the host) so if you ever get into trouble in the guest, simply
+run ```vagrant destroy``` (on the host) to get rid of it and you can quickly
+start over.
+
+
 ## History and Namesake
 
 ari-backup gets its name from the American Research Institute where it was
