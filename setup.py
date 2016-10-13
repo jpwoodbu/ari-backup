@@ -3,6 +3,7 @@
 
 import setuptools
 
+
 setuptools.setup(
     name='ari-backup',
     version='1.0.12',
@@ -15,7 +16,9 @@ setuptools.setup(
     ],
     tests_require=[
         'mock>=1.0.1',
+        'flake8',
     ],
+    test_suite='nose.collector',
     classifiers=(
         'Intended Audience :: System Administrators',
         'License :: OSI Aprooved :: BSD License',
