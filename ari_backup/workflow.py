@@ -165,7 +165,7 @@ class BaseWorkflow(object):
             return settings
         try:
             with open(self._settings_path, 'r') as settings_file:
-                settings = yaml.load(settings_file)
+                settings = yaml.safe_load(settings_file)
         except IOError:
             # We can't log anything yet because self.logger isn't set up yet.
             print ('Unable to load {} file. Continuing with default '
