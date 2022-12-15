@@ -2,17 +2,17 @@
 import copy
 import os
 
-import gflags
+from absl import flags
 
 import rdiff_backup_wrapper
 
 
-FLAGS = gflags.FLAGS
-gflags.DEFINE_string(
+FLAGS = flags.FLAGS
+flags.DEFINE_string(
     'snapshot_mount_root', '/tmp',
     'root path for creating temporary directories for mounting LVM snapshots')
-gflags.DEFINE_string('snapshot_suffix', '-ari_backup',
-                     'suffix for LVM snapshots')
+flags.DEFINE_string('snapshot_suffix', '-ari_backup',
+                    'suffix for LVM snapshots')
 
 
 class LVMSourceMixIn(object):

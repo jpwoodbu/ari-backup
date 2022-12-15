@@ -1,15 +1,15 @@
 import datetime
 import os
 import unittest
+from unittest import mock
 
-import gflags
-import mock
+from absl import flags
 
 import test_lib
 import zfs
 
 
-FLAGS = gflags.FLAGS
+FLAGS = flags.FLAGS
 # Disable logging to stderr when running tests.
 FLAGS.stderr_logging = False
 
@@ -29,7 +29,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='unused_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
         backup._run_custom_workflow = mock_run_custom_workflow
         # Attach mocks to manager mock so we can track their call order.
         manager_mock = mock.MagicMock()
@@ -71,7 +72,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='unused_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup._run_custom_workflow()
 
@@ -97,7 +99,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             rsync_dst='unused_dst_host:/unused_dst',
             zfs_hostname='fake_zfs_host',
             dataset_name='fake_pool/fake_dataset', snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup._create_zfs_snapshot(error_case=False)
 
@@ -115,7 +118,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='unused_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup._create_zfs_snapshot(error_case=True)
 
@@ -131,7 +135,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             rsync_dst='unused_dst_host:/unused_dst',
             zfs_hostname='fake_zfs_host',
             dataset_name='fake_pool/fake_dataset', snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup._find_snapshots_older_than(30)
 
@@ -161,7 +166,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='unused_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         snapshots = backup._find_snapshots_older_than(30)
 
@@ -188,7 +194,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='unused_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         snapshots = backup._find_snapshots_older_than(30)
 
@@ -215,7 +222,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='unused_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         snapshots = backup._find_snapshots_older_than(30)
 
@@ -232,7 +240,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='fake_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
         expected_creation_time = datetime.datetime(2015, 1, 3, 6, 48)
 
         creation_time = backup._get_snapshot_creation_time(
@@ -253,7 +262,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='fake_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup._get_snapshot_creation_time('fake_pool/fake_snapshot')
 
@@ -281,7 +291,8 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='fake_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
         expected_call1 = mock.call(
             ['/fake/ssh', '-p', '1234', 'fake_user@fake_zfs_host', 'zfs',
              'destroy', 'zfs/homedirs@fake-prefix-2014-01-05--0630'], False)
@@ -303,8 +314,13 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             zfs_hostname='unused_zfs_host',
             dataset_name='unused_pool/unused_dataset',
             snapshot_expiration_days=30,
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup._destroy_expired_zfs_snapshots(30, error_case=True)
 
         self.assertFalse(mock_command_runner.run.called)
+
+
+if __name__ == '__main__':
+    unittest.main()

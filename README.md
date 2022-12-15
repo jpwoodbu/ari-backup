@@ -48,10 +48,9 @@ of its use on Windows using [cygwin](http://www.cygwin.com/).
 
 Before you install ari-backup, you should install the following packages from
 your Linux distribution.
-* [python-gflags](https://pypi.python.org/pypi/python-gflags/)
-* [PyYAML](https://pypi.python.org/pypi/PyYAML)
+* [absl-python](https://pypi.org/project/absl-py/)
+* [PyYAML](https://pypi.org/project/PyYAML/)
 * [rdiff-backup](http://www.nongnu.org/rdiff-backup/)
-* [python-mock](https://pypi.python.org/pypi/mock) (only needed to run tests)
 
 To install the `ari_backup` package to your system, run this as `root`:
 ```

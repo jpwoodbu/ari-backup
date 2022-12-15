@@ -1,15 +1,15 @@
 import os
 import unittest
+from unittest import mock
 
-import gflags
-import mock
+from absl import flags
 
 import lvm
 import test_lib
 import workflow
 
 
-FLAGS = gflags.FLAGS
+FLAGS = flags.FLAGS
 # Disable logging to stderr when running tests.
 FLAGS.stderr_logging = False
 
@@ -25,7 +25,8 @@ class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
         args:
         source_hostname -- the name of the host with the source data to backup
         """
-        super(FakeBackup, self).__init__(*args, **kwargs)
+        super(FakeBackup, self).__init__(
+            argv=['fake_program'], *args, **kwargs)
         self.source_hostname = source_hostname
 
     def _run_custom_workflow(self):
@@ -354,7 +355,8 @@ class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = lvm.RdiffLVMBackup(
             source_hostname='unused', label='fake_backup', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner,
+            check_for_required_binaries=False, argv=['fake_program'])
 
         backup.add_volume('fake_volume_group/fake_volume', '/var')
         backup.include('/var')
@@ -367,7 +369,8 @@ class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = lvm.RdiffLVMBackup(
             source_hostname='unused', label='fake_backup', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner,
+            check_for_required_binaries=False, argv=['fake_program'])
 
         backup.add_volume('fake_volume_group/fake_volume', '/var')
         backup.include('/var')
@@ -383,8 +386,13 @@ class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = lvm.RdiffLVMBackup(
             source_hostname='unused', label='fake_backup', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner,
+            check_for_required_binaries=False, argv=['fake_program'])
 
         backup.run()
 
         self.assertEqual(backup.top_level_src_dir, '/fake_root/fake_backup')
+
+
+if __name__ == '__main__':
+    unittest.main()

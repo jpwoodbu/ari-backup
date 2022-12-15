@@ -1,14 +1,14 @@
 import os
 import unittest
+from unittest import mock
 
-import gflags
-import mock
+from absl import flags
 
 import rdiff_backup_wrapper
 import test_lib
 
 
-FLAGS = gflags.FLAGS
+FLAGS = flags.FLAGS
 # Disable logging to stderr when running tests.
 FLAGS.stderr_logging = False
 
@@ -32,7 +32,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         backup = rdiff_backup_wrapper.RdiffBackup(
             remove_older_than_timespec=None, label='unused',
             source_hostname='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup.include('/unused')
         backup.run()
@@ -47,7 +47,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         backup = rdiff_backup_wrapper.RdiffBackup(
             remove_older_than_timespec=None, label='unused',
             source_hostname='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup.include('/unused')
         backup.run()
@@ -62,7 +62,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         backup = rdiff_backup_wrapper.RdiffBackup(
             remove_older_than_timespec='60D', label='fake_backup',
             source_hostname='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup.include('/unused')
         backup.run()
@@ -80,7 +80,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup.include('/unused')
         backup.remove_older_than_timespec = '365D'
@@ -98,7 +98,8 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
     def testInclude_pathAddedToIncludesTracker(self):
         backup = rdiff_backup_wrapper.RdiffBackup(
-            label='unused', source_hostname='unused', settings_path=None)
+            label='unused', source_hostname='unused', settings_path=None,
+            argv=['fake_program'])
 
         backup.include('/etc')
         backup.include('/var')
@@ -114,7 +115,8 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         # that is run from being prefixed with an ssh command.
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='localhost',
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup.include('/etc')
         backup.include('/var')
@@ -133,7 +135,8 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         # that is run from being prefixed with an ssh command.
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='localhost',
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup.include('/var')
         backup.exclude('/var/cache')
@@ -148,7 +151,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='unused', source_hostname='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup._remove_older_than('60D', error_case=True)
 
@@ -160,7 +163,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup._remove_older_than('60D', error_case=False)
 
@@ -178,7 +181,8 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='fake_host',
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup.include('/fake_dir')
         backup.run()
@@ -198,7 +202,8 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='fake_host',
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup.include('/fake_dir')
         backup.run()
@@ -215,7 +220,8 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='localhost',
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup.include('/fake_dir')
         backup.run()
@@ -233,7 +239,8 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='fake_host',
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup.include('/fake_dir')
         backup.run()
@@ -254,7 +261,8 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = rdiff_backup_wrapper.RdiffBackup(
             label='fake_backup', source_hostname='localhost',
-            settings_path=None, command_runner=mock_command_runner)
+            settings_path=None, command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         backup.include('/fake_dir')
         backup.run()
@@ -279,3 +287,7 @@ class ZRdiffBackupCheckRequiredBinariesTest(
         with self.assertRaises(Exception):
             rdiff_backup_wrapper.RdiffBackup(
                 label='unused', source_hostname='unused', settings_path=None)
+
+
+if __name__ == '__main__':
+    unittest.main()

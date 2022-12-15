@@ -1,5 +1,4 @@
 import os
-import subprocess
 import unittest
 
 
@@ -19,5 +18,8 @@ class StyleTest(unittest.TestCase):
     """
     def test_pep8(self):
         """This test makes sure the code is PEP-8 compliant."""
-        flake8_command = ['/usr/bin/flake8', REPO_PATH]
-        self.assertEqual(subprocess.call(flake8_command), 0)
+        self.assertEqual(os.system('flake8 {}'.format(REPO_PATH)), 0)
+
+
+if __name__ == '__main__':
+    unittest.main()

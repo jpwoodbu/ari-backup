@@ -16,23 +16,23 @@ import sys
 import time
 import yaml
 
-import gflags
+from absl import flags
 
 from logger import Logger
 
 
 SETTINGS_PATH = '/etc/ari-backup/ari-backup.conf.yaml'
 
-FLAGS = gflags.FLAGS
-gflags.DEFINE_boolean('debug', False, 'enable debug logging')
-gflags.DEFINE_boolean('dry_run', False, 'log actions but do not execute them')
-gflags.DEFINE_integer('max_retries', 3, 'number of times to retry a command')
-gflags.DEFINE_integer('retry_interval', 5,
-                      'number of seconds between command retries')
-gflags.DEFINE_string('remote_user', 'root', 'username used for SSH sessions')
-gflags.DEFINE_string('ssh_path', '/usr/bin/ssh', 'path to ssh binary')
-gflags.DEFINE_integer('ssh_port', 22, 'SSH destination port')
-gflags.DEFINE_boolean('stderr_logging', True, 'enable error logging to stderr')
+FLAGS = flags.FLAGS
+flags.DEFINE_boolean('debug', False, 'enable debug logging')
+flags.DEFINE_boolean('dry_run', False, 'log actions but do not execute them')
+flags.DEFINE_integer('max_retries', 3, 'number of times to retry a command')
+flags.DEFINE_integer('retry_interval', 5,
+                     'number of seconds between command retries')
+flags.DEFINE_string('remote_user', 'root', 'username used for SSH sessions')
+flags.DEFINE_string('ssh_path', '/usr/bin/ssh', 'path to ssh binary')
+flags.DEFINE_integer('ssh_port', 22, 'SSH destination port')
+flags.DEFINE_boolean('stderr_logging', True, 'enable error logging to stderr')
 
 
 class WorkflowError(Exception):
@@ -86,7 +86,7 @@ class BaseWorkflow(object):
     """Base class with core workflow features."""
 
     def __init__(self, label, settings_path=SETTINGS_PATH,
-                 command_runner=None):
+                 command_runner=None, argv=sys.argv):
         """Configure a workflow object.
 
         Args:
@@ -96,6 +96,9 @@ class BaseWorkflow(object):
             command_runner: CommandRunner, an instantiated object that provides
                 the CommandRunner interface or None. If None, the CommandRunner
                 class will be used by default.
+            argv: list of str, used for testing. When a test runner is used,
+                there are many flags passed into the interpreter which are
+                invalid according to absl flags.
         """
         self._settings_path = settings_path
         # Override default flag values from user provided settings file.
@@ -103,7 +106,7 @@ class BaseWorkflow(object):
         # Initialize FLAGS. Normally this is done by the main() function but in
         # the model where the config files are excutable it seems the best
         # place to do this is here in the BaseWorkflow constructor.
-        FLAGS(sys.argv)
+        FLAGS(argv)
         # Setup logging.
         self.logger = Logger('ari_backup ({label})'.format(label=label),
                              FLAGS.debug, FLAGS.stderr_logging)
@@ -168,17 +171,17 @@ class BaseWorkflow(object):
                 settings = yaml.safe_load(settings_file)
         except IOError:
             # We can't log anything yet because self.logger isn't set up yet.
-            print ('Unable to load {} file. Continuing with default '
-                   'settings.'.format(self._settings_path))
+            print('Unable to load {} file. Continuing with default '
+                  'settings.'.format(self._settings_path))
         finally:
             return settings
 
     def _load_settings(self):
         """Loads user-defined settings."""
         settings = self._get_settings_from_file()
-        for setting, value in settings.iteritems():
+        for setting, value in settings.items():
             try:
-                FLAGS.SetDefault(setting, value)
+                FLAGS.set_default(setting, value)
             except AttributeError as e:
                 # We can't log anything yet because self.logger isn't set up
                 # yet.
@@ -338,7 +341,7 @@ class BaseWorkflow(object):
         # Let's avoid mutating the user provided command as it may be a mutable
         # type.
         args = copy.copy(command)
-        if isinstance(command, basestring):
+        if isinstance(command, str):
             shell = True
             # For remote commands, we want args as a list so it's easier to
             # prepend the SSH command to it.
@@ -453,7 +456,7 @@ class BaseWorkflow(object):
             # print to the console
             self.logger.error('Backup job cancelled by user.')
             self.logger.error("Trying to clean up...")
-        except Exception, e:
+        except Exception as e:
             error_case = True
             self.logger.error(str(e))
             self.logger.error("Trying to clean up...")

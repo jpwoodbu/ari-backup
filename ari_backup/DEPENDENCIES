@@ -1,7 +1,0 @@
-python-gflags
-python-yaml
-
-Optionally:
-ssh
-rdiff-backup
-rsync

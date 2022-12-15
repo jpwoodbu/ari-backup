@@ -2,20 +2,20 @@
 import datetime
 import shlex
 
-import gflags
+from absl import flags
 
 import lvm
 import workflow
 
 
-FLAGS = gflags.FLAGS
-gflags.DEFINE_string('rsync_options',
-                     '--archive --acls --numeric-ids --delete --inplace',
-                     'rsync command options')
-gflags.DEFINE_string('rsync_path', '/usr/bin/rsync', 'path to rsync binary')
-gflags.DEFINE_string('zfs_snapshot_prefix', 'ari-backup-',
-                     'prefix for historical ZFS snapshots')
-gflags.DEFINE_string(
+FLAGS = flags.FLAGS
+flags.DEFINE_string('rsync_options',
+                    '--archive --acls --numeric-ids --delete --inplace',
+                    'rsync command options')
+flags.DEFINE_string('rsync_path', '/usr/bin/rsync', 'path to rsync binary')
+flags.DEFINE_string('zfs_snapshot_prefix', 'ari-backup-',
+                    'prefix for historical ZFS snapshots')
+flags.DEFINE_string(
     'zfs_snapshot_timestamp_format', '%Y-%m-%d--%H%M',
     'strftime() formatted timestamp used when naming new ZFS snapshots')
 

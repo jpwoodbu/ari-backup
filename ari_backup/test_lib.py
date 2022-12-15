@@ -1,10 +1,10 @@
 import copy
-import mock
+from unittest import mock
 
-import gflags
+from absl import flags
 
 
-FLAGS = gflags.FLAGS
+FLAGS = flags.FLAGS
 
 
 class FlagSaverMixIn(object):

@@ -1,15 +1,15 @@
 import subprocess
 import time
 import unittest
+from unittest import mock
 
-import gflags
-import mock
+from absl import flags
 
 import workflow
 import test_lib
 
 
-FLAGS = gflags.FLAGS
+FLAGS = flags.FLAGS
 # Disable logging to stderr when running tests.
 FLAGS.stderr_logging = False
 
@@ -79,13 +79,13 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     @mock.patch.object(workflow.BaseWorkflow, '_get_settings_from_file')
     def testInit_userSettingsOverridesFlagDefaults(
             self, mock_get_settings_from_file):
-        FLAGS.remote_user = 'not_overridden_username'
         mock_get_settings_from_file.return_value = {'remote_user':
                                                     'overridden_username'}
 
         workflow.BaseWorkflow(
             label='unused',
-            settings_path='/path/which/is/not/None/so/settings/are/loaded')
+            settings_path='/path/which/is/not/None/so/settings/are/loaded',
+            argv=['fake_program'])
 
         self.assertEqual(FLAGS.remote_user, 'overridden_username')
 
@@ -94,7 +94,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             return x
 
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
         test_workflow.add_pre_hook(test_func, {'kwarg': 'kwarg_value'})
         self.assertEqual(test_workflow._pre_job_hooks[0],
                          (test_func, {'kwarg': 'kwarg_value'}))
@@ -104,7 +105,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             return x
 
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
         test_workflow.add_pre_hook(test_func)
         self.assertEqual(test_workflow._pre_job_hooks[0], (test_func, {}))
 
@@ -116,7 +118,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             return x
 
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
 
         test_workflow.add_pre_hook(test_func1)
         test_workflow.insert_pre_hook(0, test_func2, {'kwarg': 'kwarg_value'})
@@ -133,7 +136,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             return x
 
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
 
         test_workflow.add_pre_hook(test_func1)
         test_workflow.insert_pre_hook(0, test_func2)
@@ -148,7 +152,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             return x
 
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
 
         test_workflow.add_pre_hook(test_func1)
         test_workflow.add_pre_hook(test_func2)
@@ -160,7 +165,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         def test_func(x):
             return x
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
         test_workflow.add_post_hook(test_func, {'kwarg': 'kwarg_value'})
         self.assertEqual(test_workflow._post_job_hooks[0],
                          (test_func, {'kwarg': 'kwarg_value'}))
@@ -168,8 +174,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
     def testAddPostHook_functionWithOutKwargs_addsHookWithEmptyKwargs(self):
         def test_func(x):
             return x
-        test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+        test_workflow = workflow.BaseWorkflow(
+            label='unused', settings_path=None, argv=['fake_program'])
         test_workflow.add_post_hook(test_func)
         self.assertEqual(test_workflow._post_job_hooks[0], (test_func, {}))
 
@@ -181,7 +187,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             return x
 
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
 
         test_workflow.add_pre_hook(test_func1)
         test_workflow.insert_pre_hook(0, test_func2, {'kwarg': 'kwarg_value'})
@@ -197,7 +204,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             return x
 
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
 
         test_workflow.add_post_hook(test_func1)
         test_workflow.insert_post_hook(0, test_func2)
@@ -212,7 +220,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             return x
 
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
 
         test_workflow.add_post_hook(test_func1)
         test_workflow.add_post_hook(test_func2)
@@ -239,7 +248,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         # Create BaseWorkflow object and "override" its _run_custom_workflow
         # method to simulate what a BaseWorkflow subclass would do.
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
         test_workflow._run_custom_workflow = mock_run_custom_workflow
 
         test_workflow.add_pre_hook(mock_pre_hook1, {'kwarg': 'kwarg_value1'})
@@ -269,7 +279,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         # Create BaseWorkflow object and "override" its _run_custom_workflow
         # method to simulate what a BaseWorkflow subclass would do.
         test_workflow = workflow.BaseWorkflow(label='unused',
-                                              settings_path=None)
+                                              settings_path=None,
+                                              argv=['fake_program'])
         test_workflow._run_custom_workflow = mock_run_custom_workflow
 
         test_workflow.add_post_hook(mock_post_hook1, {'kwarg': 'kwarg_value1'})
@@ -282,7 +293,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         test_workflow.run_command(
             'test_command --test_flag test_arg', host='localhost')
@@ -294,7 +306,8 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner,
+            argv=['fake_program'])
 
         test_workflow.run_command(
             ['test_command', '--test_flag', 'test_arg'], host='localhost')
@@ -306,7 +319,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         with self.assertRaises(TypeError):
             test_workflow.run_command(None)
@@ -318,7 +331,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         test_workflow.run_command(
             'test_command --test_flag test_arg', host='fake_host')
@@ -333,7 +346,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner.run.return_value = (str(), str(), 1)
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         with self.assertRaises(workflow.NonZeroExitCode):
             test_workflow.run_command('test_command')
@@ -345,7 +358,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
                                                 0)
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         stdout, stderr = test_workflow.run_command('test_command')
 
@@ -361,7 +374,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner.run.return_value = (str(), str(), 0)
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         test_workflow.run_command_with_retries('test_command')
 
@@ -377,7 +390,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner.run.side_effect = [return1, return2]
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         test_workflow.run_command_with_retries('test_command')
 
@@ -394,7 +407,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner.run.side_effect = [return1, return2, return3]
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         with self.assertRaises(workflow.NonZeroExitCode):
             test_workflow.run_command_with_retries('test_command')
@@ -410,8 +423,12 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner.run.side_effect = [return1, return2]
         test_workflow = workflow.BaseWorkflow(
             label='unused', settings_path=None,
-            command_runner=mock_command_runner)
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         test_workflow.run_command_with_retries('test_command')
 
         mock_sleep.assert_called_once_with(7)
+
+
+if __name__ == '__main__':
+    unittest.main()

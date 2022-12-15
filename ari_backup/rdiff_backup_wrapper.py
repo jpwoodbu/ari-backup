@@ -2,25 +2,25 @@
 import os
 import shlex
 
-import gflags
+from absl import flags
 
 import workflow
 
 
-FLAGS = gflags.FLAGS
-gflags.DEFINE_string('backup_store_path', None,
-                     'base path to which to write backups')
-gflags.DEFINE_string('rdiff_backup_path', '/usr/bin/rdiff-backup',
-                     'path to rdiff-backup binary')
-gflags.DEFINE_boolean('ssh_compression', False,
-                      'compress rdiff-backup SSH streams')
+FLAGS = flags.FLAGS
+flags.DEFINE_string('backup_store_path', None,
+                    'base path to which to write backups')
+flags.DEFINE_string('rdiff_backup_path', '/usr/bin/rdiff-backup',
+                    'path to rdiff-backup binary')
+flags.DEFINE_boolean('ssh_compression', False,
+                     'compress rdiff-backup SSH streams')
 # terminal-verbosity=1 brings the terminal verbosity down so that we only see
 # errors.
-gflags.DEFINE_string('rdiff_backup_options',
-                     ('--exclude-device-files --exclude-fifos '
-                      '--exclude-sockets --terminal-verbosity 1'),
-                     'default rdiff-backup options')
-gflags.DEFINE_string(
+flags.DEFINE_string('rdiff_backup_options',
+                    ('--exclude-device-files --exclude-fifos '
+                     '--exclude-sockets --terminal-verbosity 1'),
+                    'default rdiff-backup options')
+flags.DEFINE_string(
     'remove_older_than_timespec', None,
     ('Global timespec for timming rdiff-backup recovery points. Default is '
      'None, which means no previous recovery points will be trimmed. '
@@ -38,7 +38,7 @@ gflags.DEFINE_string(
 # set the top_level_src_dir to '/tmp/database-server1_snapshot' then your
 # backup mirror would be built at /backup-store/database-server1, which is
 # probably what you want.
-gflags.DEFINE_string(
+flags.DEFINE_string(
     'top_level_src_dir', '/',
     'top level source directory from which to begin the backup mirror')
 
@@ -47,7 +47,8 @@ class RdiffBackup(workflow.BaseWorkflow):
     """Workflow to backup machines using rdiff-backup."""
 
     def __init__(self, label, source_hostname,
-                 remove_older_than_timespec=None, **kwargs):
+                 remove_older_than_timespec=None,
+                 check_for_required_binaries=True, **kwargs):
         """Configure an RdiffBackup object.
 
         Args:
@@ -73,6 +74,7 @@ class RdiffBackup(workflow.BaseWorkflow):
             self.remove_older_than_timespec = FLAGS.remove_older_than_timespec
         else:
             self.remove_older_than_timespec = remove_older_than_timespec
+        self._check_for_required_binaries = check_for_required_binaries
 
         # Initialize include and exclude lists.
         self._includes = list()
@@ -130,7 +132,8 @@ class RdiffBackup(workflow.BaseWorkflow):
             raise Exception('backup_store_path setting is not set.')
 
     def _check_required_binaries(self):
-        if not os.access(self.rdiff_backup_path, os.X_OK):
+        if self._check_for_required_binaries and not os.access(
+          self.rdiff_backup_path, os.X_OK):
             raise Exception('rdiff-backup does not appear to be installed or '
                             'is not executable.')
 
