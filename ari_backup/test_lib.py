@@ -7,28 +7,6 @@ from absl import flags
 FLAGS = flags.FLAGS
 
 
-class FlagSaverMixIn(object):
-    """A mix in class to preserve gflags values between tests.
-
-    This class can be subclasses by test classes to permit tests to safely
-    modify the values of gflags. The original value will be restored after the
-    test completes.
-    """
-    def setUp(self):
-        super(FlagSaverMixIn, self).setUp()
-        self._save_flags()
-
-    def tearDown(self):
-        super(FlagSaverMixIn, self).tearDown()
-        self._restore_flags()
-
-    def _save_flags(self):
-        self._flag_values = copy.deepcopy(FLAGS.__dict__)
-
-    def _restore_flags(self):
-        FLAGS.__dict__.update(self._flag_values)
-
-
 def GetMockCommandRunner():
     """Creates a mock version of workflow.CommandRunner helpful for testing.
 

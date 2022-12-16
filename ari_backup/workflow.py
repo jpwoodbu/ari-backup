@@ -47,7 +47,7 @@ class NonZeroExitCode(WorkflowError):
     """Raises when subprocess returns a non-zero exitcode."""
 
 
-class CommandRunner(object):
+class CommandRunner:
     """This class is a simple abstration layer to the subprocess module."""
 
     def run(self, args, shell):
@@ -82,7 +82,7 @@ class CommandRunner(object):
         self._process.terminate()
 
 
-class BaseWorkflow(object):
+class BaseWorkflow:
     """Base class with core workflow features."""
 
     def __init__(self, label, settings_path=SETTINGS_PATH,

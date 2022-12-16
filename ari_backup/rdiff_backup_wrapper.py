@@ -47,8 +47,7 @@ class RdiffBackup(workflow.BaseWorkflow):
     """Workflow to backup machines using rdiff-backup."""
 
     def __init__(self, label, source_hostname,
-                 remove_older_than_timespec=None,
-                 check_for_required_binaries=True, **kwargs):
+                 remove_older_than_timespec=None, **kwargs):
         """Configure an RdiffBackup object.
 
         Args:
@@ -61,7 +60,7 @@ class RdiffBackup(workflow.BaseWorkflow):
                 None which will use the value of the remove_older_than_timespec
                 flag.
         """
-        super(RdiffBackup, self).__init__(label, **kwargs)
+        super().__init__(label, **kwargs)
         self.source_hostname = source_hostname
 
         # Assign flags to instance vars so they might be easily overridden in
@@ -74,7 +73,6 @@ class RdiffBackup(workflow.BaseWorkflow):
             self.remove_older_than_timespec = FLAGS.remove_older_than_timespec
         else:
             self.remove_older_than_timespec = remove_older_than_timespec
-        self._check_for_required_binaries = check_for_required_binaries
 
         # Initialize include and exclude lists.
         self._includes = list()
@@ -132,8 +130,7 @@ class RdiffBackup(workflow.BaseWorkflow):
             raise Exception('backup_store_path setting is not set.')
 
     def _check_required_binaries(self):
-        if self._check_for_required_binaries and not os.access(
-          self.rdiff_backup_path, os.X_OK):
+        if not os.access(self.rdiff_backup_path, os.X_OK):
             raise Exception('rdiff-backup does not appear to be installed or '
                             'is not executable.')
 

@@ -3,6 +3,7 @@ import unittest
 from unittest import mock
 
 from absl import flags
+from absl.testing import flagsaver
 
 import rdiff_backup_wrapper
 import test_lib
@@ -13,10 +14,12 @@ FLAGS = flags.FLAGS
 FLAGS.stderr_logging = False
 
 
-class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
+class RdiffBackupTest(unittest.TestCase):
 
     def setUp(self):
-        super(RdiffBackupTest, self).setUp()
+        super().setUp()
+        self.addCleanup(
+            flagsaver.restore_flag_values, flagsaver.save_flag_values())
         FLAGS.backup_store_path = '/unused'
         FLAGS.rdiff_backup_options = str()
         patcher = mock.patch.object(
@@ -24,6 +27,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         self.addCleanup(patcher.stop)
         patcher.start()
 
+    @flagsaver.flagsaver
     @mock.patch.object(rdiff_backup_wrapper.RdiffBackup, '_remove_older_than')
     def testRemoveOlderThan_timespecIsNone_backupsNotTrimmed(
             self, mock_remove_older_than):
@@ -39,6 +43,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertFalse(mock_remove_older_than.called)
 
+    @flagsaver.flagsaver
     @mock.patch.object(rdiff_backup_wrapper.RdiffBackup, '_remove_older_than')
     def testRemoveOlderThan_timespecArgIsNone_timespecFlagUsed(
             self, mock_remove_older_than):
@@ -55,6 +60,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_remove_older_than.assert_called_once_with(
             timespec='13D', error_case=False)
 
+    @flagsaver.flagsaver
     def testRemoveOlderThan_timespecIsNotNone_backupsTrimmed(self):
         FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
         FLAGS.backup_store_path = '/fake/backup-store'
@@ -72,6 +78,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
              '/fake/backup-store/fake_backup'], False)
 
     # Test for issue #19.
+    @flagsaver.flagsaver
     def testRemoveOlderThan_timespecOverriddenViaAttribute_usesOverriddenValue(
             self):
         FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
@@ -90,6 +97,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             ['/fake/rdiff-backup', '--force', '--remove-older-than', '365D',
              '/fake/backup-store/fake_backup'], False)
 
+    @flagsaver.flagsaver
     def testCheckRequiredFlags_backupStorePathNotSet_raisesException(self):
         FLAGS.backup_store_path = None
         with self.assertRaises(Exception):
@@ -106,6 +114,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertEqual(backup._includes, ['/etc', '/var'])
 
+    @flagsaver.flagsaver
     def testInclude_backupIncludesPaths(self):
         FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
         FLAGS.backup_store_path = '/fake/backup-store'
@@ -126,6 +135,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             ['/fake/rdiff-backup', '--include', '/etc', '--include', '/var',
              '--exclude', '**', '/', '/fake/backup-store/fake_backup'], False)
 
+    @flagsaver.flagsaver
     def testExclude_backupExcludesPaths(self):
         FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
         FLAGS.backup_store_path = '/fake/backup-store'
@@ -157,6 +167,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertFalse(mock_command_runner.run.called)
 
+    @flagsaver.flagsaver
     def testRemoveOlderThan_errorCaseIsFalse_trimsBackups(self):
         FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
         FLAGS.backup_store_path = '/fake/backup-store'
@@ -171,6 +182,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             ['/fake/rdiff-backup', '--force', '--remove-older-than', '60D',
              '/fake/backup-store/fake_backup'], False)
 
+    @flagsaver.flagsaver
     def testRunCustomWorkflow_sshCompressionFlagIsFalse_sshCompressionDisabled(
             self):
         FLAGS.ssh_compression = False
@@ -192,6 +204,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
              '/fake_dir', '--exclude', '**', 'fake_user@fake_host::/',
              '/fake/backup-store/fake_backup'], False)
 
+    @flagsaver.flagsaver
     def testRunCustomWorkflow_sshCompressionFlagTrue_sshCompressionNotDisabled(
             self):
         FLAGS.ssh_compression = True
@@ -213,6 +226,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
              'fake_user@fake_host::/', '/fake/backup-store/fake_backup'],
             False)
 
+    @flagsaver.flagsaver
     def testRunCustomWorkflow_sourceHostnameIsLocalhost_sourceIsPath(self):
         FLAGS.rdiff_backup_path = '/fake/rdiff-backup'
         FLAGS.backup_store_path = '/fake/backup-store'
@@ -230,6 +244,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             ['/fake/rdiff-backup', '--include', '/fake_dir', '--exclude', '**',
              '/', '/fake/backup-store/fake_backup'], False)
 
+    @flagsaver.flagsaver
     def testRunCustomWorkflow_sourceHostnameIsNotLocalhost_sourceIsHost(self):
         FLAGS.ssh_compression = True
         FLAGS.remote_user = 'fake_user'
@@ -251,6 +266,7 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
              'fake_user@fake_host::/', '/fake/backup-store/fake_backup'],
             False)
 
+    @flagsaver.flagsaver
     def testRunCustomWorkflow_rdiffBackupOptionsGiven_addsOptionsToCommand(
             self):
         FLAGS.rdiff_backup_options = ('--fake-extra-option1 '
@@ -274,10 +290,10 @@ class RdiffBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             False)
 
 
-class ZRdiffBackupCheckRequiredBinariesTest(
-        test_lib.FlagSaverMixIn, unittest.TestCase):
+class ZRdiffBackupCheckRequiredBinariesTest(unittest.TestCase):
     """Class for testing methods that were mocked out in RdiffBackupTest."""
 
+    @flagsaver.flagsaver
     @mock.patch.object(os, 'access')
     def testCheckRequiredBinaries_rdiffBackupNotInstalled_raisesException(
             self, mock_os_access):

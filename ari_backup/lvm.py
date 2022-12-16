@@ -15,7 +15,7 @@ flags.DEFINE_string('snapshot_suffix', '-ari_backup',
                     'suffix for LVM snapshots')
 
 
-class LVMSourceMixIn(object):
+class LVMSourceMixIn():
     """MixIn class to work with LVM based backup sources.
 
     This class registers pre-job and post-job hooks to create and mount LVM
@@ -25,7 +25,7 @@ class LVMSourceMixIn(object):
     defined by any subclass of workflow.BaseWorkFlow that also uses this mixin.
     """
     def __init__(self, *args, **kwargs):
-        super(LVMSourceMixIn, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         # Assign flags to instance vars so they might be easily overridden in
         # workflow configs.
@@ -211,7 +211,7 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     """Subclass to add LVM snapshot management to RdiffBackup."""
 
     def __init__(self, *args, **kwargs):
-        super(RdiffLVMBackup, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def _prefix_mount_point_to_paths(self, paths):
         """Prefixes the snapshot_mount_point_base_path to each path in paths.
@@ -250,6 +250,6 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
         # After changing the top-level src dir to where the snapshots are
         # mounted, have the base class perform an rdiff-backup.
         self.top_level_src_dir = self._snapshot_mount_point_base_path
-        super(RdiffLVMBackup, self)._run_custom_workflow()
+        super()._run_custom_workflow()
 
         self.logger.debug('RdiffLVMBackup._run_custom_workflow completed.')

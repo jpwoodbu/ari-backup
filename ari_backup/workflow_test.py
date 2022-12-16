@@ -4,6 +4,7 @@ import unittest
 from unittest import mock
 
 from absl import flags
+from absl.testing import flagsaver
 
 import workflow
 import test_lib
@@ -17,7 +18,7 @@ FLAGS.stderr_logging = False
 class CommandRunnerTest(unittest.TestCase):
 
     def setUp(self):
-        super(CommandRunnerTest, self).setUp()
+        super().setUp()
         self.command_runner = workflow.CommandRunner()
         patcher = mock.patch.object(subprocess, 'Popen')
         self.addCleanup(patcher.stop)
@@ -74,11 +75,13 @@ class CommandRunnerTest(unittest.TestCase):
         self.assertEqual(return_code, 3)
 
 
-class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
+class BaseWorkflowTest(unittest.TestCase):
 
+    @flagsaver.flagsaver
     @mock.patch.object(workflow.BaseWorkflow, '_get_settings_from_file')
     def testInit_userSettingsOverridesFlagDefaults(
             self, mock_get_settings_from_file):
+        FLAGS.set_default('remote_user', 'not_overridden_username')
         mock_get_settings_from_file.return_value = {'remote_user':
                                                     'overridden_username'}
 
@@ -324,6 +327,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         with self.assertRaises(TypeError):
             test_workflow.run_command(None)
 
+    @flagsaver.flagsaver
     def testRunCommand_hostIsNotLocalhost_sshArgumentsAdded(self):
         FLAGS.remote_user = 'test_user'
         FLAGS.ssh_path = '/fake/ssh'
@@ -380,6 +384,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertEqual(mock_command_runner.run.call_count, 1)
 
+    @flagsaver.flagsaver
     @mock.patch.object(time, 'sleep')
     def testRunCommandWithRetries_firstTryFails_commandRetried(
             self, unused_mock_sleep):
@@ -396,6 +401,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertEqual(mock_command_runner.run.call_count, 2)
 
+    @flagsaver.flagsaver
     @mock.patch.object(time, 'sleep')
     def testRunCommandWithRetries_maxRetriesReached_raisesException(
             self, unused_mock_sleep):
@@ -412,6 +418,7 @@ class BaseWorkflowTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         with self.assertRaises(workflow.NonZeroExitCode):
             test_workflow.run_command_with_retries('test_command')
 
+    @flagsaver.flagsaver
     @mock.patch.object(time, 'sleep')
     def testRunCommandWithRetries_firstTryFails_sleepsBetweenRetries(
             self, mock_sleep):

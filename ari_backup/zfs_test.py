@@ -4,6 +4,7 @@ import unittest
 from unittest import mock
 
 from absl import flags
+from absl.testing import flagsaver
 
 import test_lib
 import zfs
@@ -14,7 +15,7 @@ FLAGS = flags.FLAGS
 FLAGS.stderr_logging = False
 
 
-class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
+class ZFSLVMBackupTest(unittest.TestCase):
 
     @mock.patch.object(zfs.ZFSLVMBackup, '_destroy_expired_zfs_snapshots')
     @mock.patch.object(zfs.ZFSLVMBackup, '_create_zfs_snapshot')
@@ -56,6 +57,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         test_lib.AssertCallsInOrder(manager_mock, expected_calls)
 
+    @flagsaver.flagsaver
     @unittest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testRunCustomWorkflow(self):
@@ -81,6 +83,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             ['/fake/rsync', '--fake-options', '--exclude', '/.zfs',
              '/fake_root/fake_label/', 'fake_dst_host:/fake_dst'], False)
 
+    @flagsaver.flagsaver
     @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
     def testCreateZFSSnapshot_errorCaseIsFalse_createsSnapshot(
             self, mock_get_current_datetime):
@@ -125,6 +128,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertFalse(mock_command_runner.run.called)
 
+    @flagsaver.flagsaver
     def testFindSnapshotsOlderThan_runsCorrectZFSCommand(self):
         FLAGS.remote_user = 'fake_user'
         FLAGS.ssh_path = '/fake/ssh'
@@ -146,6 +150,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
              'fake_pool/fake_dataset'],
             False)
 
+    @flagsaver.flagsaver
     @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
     @mock.patch.object(zfs.ZFSLVMBackup, '_get_snapshot_creation_time')
     def testFindSnapshotsOlderThan_returnsOnlySnapshots(
@@ -175,6 +180,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
                          ['zfs/homedirs@fake-prefix-2014-01-05--0630',
                           'zfs/homedirs@fake-prefix-2014-01-06--0648'])
 
+    @flagsaver.flagsaver
     @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
     @mock.patch.object(zfs.ZFSLVMBackup, '_get_snapshot_creation_time')
     def testFindSnapshotsOlderThan_returnsOnlyPrefixedSnapshots(
@@ -202,6 +208,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         self.assertEqual(snapshots,
                          ['zfs/homedirs@fake-prefix-2014-01-05--0630'])
 
+    @flagsaver.flagsaver
     @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
     @mock.patch.object(zfs.ZFSLVMBackup, '_get_snapshot_creation_time')
     def testFindSnapshotsOlderThan_returnsOnlySnapshotsOlderThanX(
@@ -249,6 +256,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertEqual(creation_time, expected_creation_time)
 
+    @flagsaver.flagsaver
     def testGetSnapshotCreationTime_runsCorrectZFSCommand(self):
         FLAGS.ssh_path = '/fake/ssh'
         FLAGS.ssh_port = 1234
@@ -273,6 +281,7 @@ class ZFSLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
              'fake_pool/fake_snapshot'],
             False)
 
+    @flagsaver.flagsaver
     @mock.patch.object(zfs.ZFSLVMBackup, '_get_current_datetime')
     @mock.patch.object(zfs.ZFSLVMBackup, '_find_snapshots_older_than')
     def testDestroyExpiredZFSSnapshots_errorCaseIsFalse_destroysSnapshots(

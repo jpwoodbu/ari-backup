@@ -67,7 +67,7 @@ class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
         path component in the rsync_dst and dataset_name arguments.
         """
         # Call our super class's constructor to enable LVM snapshot management
-        super(ZFSLVMBackup, self).__init__(label, **kwargs)
+        super().__init__(label, **kwargs)
 
         # Assign instance vars specific to this class.
         self.source_hostname = source_hostname

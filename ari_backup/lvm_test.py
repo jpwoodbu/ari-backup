@@ -3,6 +3,7 @@ import unittest
 from unittest import mock
 
 from absl import flags
+from absl.testing import flagsaver
 
 import lvm
 import test_lib
@@ -25,15 +26,14 @@ class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
         args:
         source_hostname -- the name of the host with the source data to backup
         """
-        super(FakeBackup, self).__init__(
-            argv=['fake_program'], *args, **kwargs)
+        super().__init__(argv=['fake_program'], *args, **kwargs)
         self.source_hostname = source_hostname
 
     def _run_custom_workflow(self):
         pass
 
 
-class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
+class LVMSourceMixInTest(unittest.TestCase):
 
     @mock.patch.object(FakeBackup, '_run_custom_workflow')
     @mock.patch.object(lvm.LVMSourceMixIn, '_delete_snapshots')
@@ -85,6 +85,7 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         self.assertEqual(backup._logical_volumes,
                          [('fake_volume_group/fake_volume', '/etc', 'ro')])
 
+    @flagsaver.flagsaver
     def testCreateSnapshots_multipleSnapshots_createsSnapshots(self):
         FLAGS.snapshot_suffix = '-fake_backup'
         mock_command_runner = test_lib.GetMockCommandRunner()
@@ -110,6 +111,7 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             [expected_call_fakevolume1, expected_call_fakevolume2],
             any_order=True)
 
+    @flagsaver.flagsaver
     @unittest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testCreateSnapshots_multipleSnapshots_addsSnapshotsToTracker(self):
@@ -144,6 +146,7 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertListEqual(expected_value, backup._lv_snapshots)
 
+    @flagsaver.flagsaver
     def testDeleteSnapshots_multipleSnapshots_deletesSnapshots(self):
         FLAGS.snapshot_suffix = '-fake_backup'
         mock_command_runner = test_lib.GetMockCommandRunner()
@@ -179,6 +182,7 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         self.assertFalse(backup._lv_snapshots[0]['created'])
         self.assertFalse(backup._lv_snapshots[1]['created'])
 
+    @flagsaver.flagsaver
     @unittest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testMountSnapshots_multipleSnapshots_makesMountPointDirectories(self):
@@ -227,6 +231,7 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
 
         self.assertFalse(backup.run())
 
+    @flagsaver.flagsaver
     @unittest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testMountSnapshots_withMountOptions_mountsWithMountOptions(self):
@@ -255,6 +260,7 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner.AssertCallsInOrder(
             [expected_call_fakevolume1, expected_call_fakevolume2])
 
+    @flagsaver.flagsaver
     @unittest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testMountSnapshots_withoutMountOptions_mountsWithoutMountOptions(self):
@@ -293,6 +299,7 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         self.assertTrue(backup._lv_snapshots[0]['mounted'])
         self.assertTrue(backup._lv_snapshots[1]['mounted'])
 
+    @flagsaver.flagsaver
     @unittest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testUnmountSnapshots_snapshotsMounted_snapshotsUnmounted(self):
@@ -317,6 +324,7 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner.AssertCallsInOrder(
             [expected_call_fakevolume2, expected_call_fakevolume1])
 
+    @flagsaver.flagsaver
     @unittest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testUnmountSnapshots_mountPointsCreated_mountPointsRemoved(self):
@@ -344,19 +352,26 @@ class LVMSourceMixInTest(test_lib.FlagSaverMixIn, unittest.TestCase):
             [expected_call_fakevolume2, expected_call_fakevolume1])
 
 
-class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
+class RdiffLVMBackupTest(unittest.TestCase):
 
     def setUp(self):
-        super(RdiffLVMBackupTest, self).setUp()
+        super().setUp()
+        self.addCleanup(
+            flagsaver.restore_flag_values, flagsaver.save_flag_values())
         FLAGS.backup_store_path = '/unused'
+        # Disable the installed binaries check. We don't call them in tests
+        # anyway.
+        patcher = mock.patch.object(
+            lvm.RdiffLVMBackup, '_check_required_binaries')
+        self.addCleanup(patcher.stop)
+        patcher.start()
 
     def testRunCustomWorkflow_prefixesIncludeDirs(self):
         FLAGS.snapshot_mount_root = '/fake_root'
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = lvm.RdiffLVMBackup(
             source_hostname='unused', label='fake_backup', settings_path=None,
-            command_runner=mock_command_runner,
-            check_for_required_binaries=False, argv=['fake_program'])
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup.add_volume('fake_volume_group/fake_volume', '/var')
         backup.include('/var')
@@ -369,8 +384,7 @@ class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = lvm.RdiffLVMBackup(
             source_hostname='unused', label='fake_backup', settings_path=None,
-            command_runner=mock_command_runner,
-            check_for_required_binaries=False, argv=['fake_program'])
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup.add_volume('fake_volume_group/fake_volume', '/var')
         backup.include('/var')
@@ -386,8 +400,7 @@ class RdiffLVMBackupTest(test_lib.FlagSaverMixIn, unittest.TestCase):
         mock_command_runner = test_lib.GetMockCommandRunner()
         backup = lvm.RdiffLVMBackup(
             source_hostname='unused', label='fake_backup', settings_path=None,
-            command_runner=mock_command_runner,
-            check_for_required_binaries=False, argv=['fake_program'])
+            command_runner=mock_command_runner, argv=['fake_program'])
 
         backup.run()
 
