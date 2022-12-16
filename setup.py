@@ -1,31 +1,29 @@
 #!/usr/bin/env python
 """Setup script for ari_backup package."""
 
-import setuptools
+from distutils.core import setup
 
-
-setuptools.setup(
+setup(
     name='ari-backup',
-    version='1.0.12',
+    version='1.1.0',
     license='BSD',
     packages=['ari_backup'],
     author='ari-backup team',
     install_requires=[
+        'absl-py>=1.3.0',
         'PyYAML>=3.0',
-        'python-gflags>=1.5.1',
     ],
     tests_require=[
-        'mock>=1.0.1',
         'flake8',
         'nose'
     ],
     test_suite='nose.collector',
-    classifiers=(
+    classifiers=[
         'Intended Audience :: System Administrators',
         'License :: OSI Aprooved :: BSD License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Operating System :: OS Independent',
         'Topic :: System :: Archiving :: Backup',
-    )
+    ]
 )
