@@ -24,7 +24,7 @@ class CommandRunnerTest(unittest.TestCase):
         self.addCleanup(patcher.stop)
         self.mock_popen = patcher.start()
         self.mock_popen.return_value = mock.MagicMock(
-            returncode=0, communicate=mock.MagicMock(return_value=('', '')))
+            returncode=0, communicate=mock.MagicMock(return_value=(b'', b'')))
 
     def testRun_shellIsTrue_opensProcessWithShell(self):
         self.command_runner.run(['fake_program', 'fake_arg1'], True)
@@ -47,7 +47,8 @@ class CommandRunnerTest(unittest.TestCase):
     @mock.patch.object(subprocess, 'Popen')
     def testRun_returnsStdOut(self, mock_popen):
         mock_popen.return_value = mock.MagicMock(
-            communicate=mock.MagicMock(return_value=('fake_stdout', 'unused')))
+            communicate=mock.MagicMock(
+                return_value=(b'fake_stdout', b'unused')))
 
         stdout, _, _ = self.command_runner.run(
             ['unused_program'], True)
@@ -57,7 +58,8 @@ class CommandRunnerTest(unittest.TestCase):
     @mock.patch.object(subprocess, 'Popen')
     def testRun_returnsStdErr(self, mock_popen):
         mock_popen.return_value = mock.MagicMock(
-            communicate=mock.MagicMock(return_value=('unused', 'fake_stderr')))
+            communicate=mock.MagicMock(
+                return_value=(b'unused', b'fake_stderr')))
 
         _, stderr, _ = self.command_runner.run(
             ['unused_program'], True)
@@ -68,7 +70,8 @@ class CommandRunnerTest(unittest.TestCase):
     def testRun_returnsReturnCode(self, mock_popen):
         mock_popen.return_value = mock.MagicMock(
             returncode=3,
-            communicate=mock.MagicMock(return_value=('unused', 'unused')))
+            communicate=mock.MagicMock(
+                return_value=(b'unused', b'unused')))
 
         _, _, return_code = self.command_runner.run(['unused_program'], True)
 

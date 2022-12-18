@@ -17,19 +17,19 @@ FLAGS.stderr_logging = False
 
 class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     """Fake class to help test the LVMSourceMixIn class."""
-    def __init__(self, source_hostname, *args, **kwargs):
+    def __init__(self, source_hostname: str, *args, **kwargs):
         """Initalizes the class.
 
         The source_hostname attribute is added to the instance as it is needed
         by the LVMSourceMixIn.
 
-        args:
-        source_hostname -- the name of the host with the source data to backup
+        Args:
+            source_hostname: name of the host with the source data to backup.
         """
         super().__init__(argv=['fake_program'], *args, **kwargs)
         self.source_hostname = source_hostname
 
-    def _run_custom_workflow(self):
+    def _run_custom_workflow(self) -> None:
         pass
 
 

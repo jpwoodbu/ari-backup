@@ -1,4 +1,6 @@
 """LVM based backup workflows and MixIn classes."""
+from typing import Iterable, Optional, TypeAlias
+
 import copy
 import os
 
@@ -13,6 +15,10 @@ flags.DEFINE_string(
     'root path for creating temporary directories for mounting LVM snapshots')
 flags.DEFINE_string('snapshot_suffix', '-ari_backup',
                     'suffix for LVM snapshots')
+
+
+_LogicalVolumes: TypeAlias = list[tuple[str, str, str]]
+_LVSnapshots: TypeAlias = list[dict]
 
 
 class LVMSourceMixIn():
@@ -34,13 +40,14 @@ class LVMSourceMixIn():
 
         # This is a list of 3-tuples, where each inner 3-tuple expresses the LV
         # to back up, the mount point for that LV, and any mount options
-        # necessary. For example: [('hostname/root, '/', 'noatime'),]
+        # necessary. See the _LogicalVolumes TypeAlias.
+        # For example: [('hostname/root, '/', 'noatime'),]
         # TODO(jpwoodbu) I wonder if noatime being used all the time makes
         # sense to improve read performance and reduce writes to the snapshots.
         self._logical_volumes = list()
 
         # A list of dicts with the snapshot paths and where they should be
-        # mounted.
+        # mounted. See the _LVSnapshots TypeAlias.
         self._lv_snapshots = list()
         # Mount the snapshots in a directory named for this job's label.
         self._snapshot_mount_point_base_path = os.path.join(
@@ -52,49 +59,32 @@ class LVMSourceMixIn():
         self.add_post_hook(self._umount_snapshots)
         self.add_post_hook(self._delete_snapshots)
 
-    # Maintain backward compatibility with old hooks interface.
-    @property
-    def lv_list(self):
-        self.logger.warning(
-            'lv_list is deprecated. Please use add_volume() instead.')
-        return self._logical_volumes
-
-    @lv_list.setter
-    def lv_list(self, value):
-        self.logger.warning(
-            'lv_list is deprecated. Please use add_volume() instead.')
-        self._logical_volumes = value
-
-    def add_volume(self, name, mount_point, mount_options=None):
+    def add_volume(self,
+                   name: str,
+                   mount_point: str,
+                   mount_options: Optional[str] = None) -> None:
         """Adds logical volume to list of volumes to be backed up.
 
         Args:
-            name: str, full logical volume path (with volume group) in
+            name: full logical volume path (with volume group) in
                 group/volume_name format.
-            mount_point: str, path where the volume should be mounted during
-                the backup. This is normally the same path where the volume is
+            mount_point: path where the volume should be mounted during the
+                backup. This is normally the same path where the volume is
                 normally mounted. For example, if the volume is normally
                 mounted at /var/www, the value passed here should be /var/www
                 if you want this data to be in the /var/www directory in the
                 backup.
-            mount_options: str or None, mount options to be applied when
-                mounting the snapshot. For example, "noatime,ro". Defaults to
-                None which applies no mount options.
+            mount_options: mount options to be applied when mounting the
+                snapshot. For example, "noatime,ro".
         """
         volume = (name, mount_point, mount_options)
         self._logical_volumes.append(volume)
 
-    def _create_snapshots(self):
+    def _create_snapshots(self) -> None:
         """Creates snapshots of all the volumns added with add_volume()."""
         self.logger.info('Creating LVM snapshots...')
         for volume in self._logical_volumes:
-            # TODO(jpwoodbu) This try/except won't ne necessary when the
-            # deprecated interface to the self.lv_list is removed.
-            try:
-                lv_path, src_mount_path, mount_options = volume
-            except ValueError:
-                lv_path, src_mount_path = volume
-                mount_options = None
+            lv_path, src_mount_path, mount_options = volume
 
             vg_name, lv_name = lv_path.split('/')
             new_lv_name = lv_name + self.snapshot_suffix
@@ -118,13 +108,13 @@ class LVMSourceMixIn():
                 'mounted': False,
             })
 
-    def _delete_snapshots(self, error_case=None):
+    def _delete_snapshots(self, error_case: Optional[bool] = None) -> None:
         """Deletes tracked snapshots.
 
         Args:
-            error_case: bool or None, whether an error has occurred during the
-                backup. Default is None. This method does not use this arg but
-                must accept it as part of the post hook API.
+            error_case: whether an error has occurred during the backup. This
+                method does not use this arg but must accept it as part of the
+                post hook API.
         """
         self.logger.info('Deleting LVM snapshots...')
         for snapshot in self._lv_snapshots:
@@ -135,7 +125,7 @@ class LVMSourceMixIn():
                 self.run_command_with_retries(command, self.source_hostname)
                 snapshot['created'] = False
 
-    def _mount_snapshots(self):
+    def _mount_snapshots(self) -> None:
         """Creates mountpoints as well as mounts the snapshots.
 
         If the mountpoint directory already has a file system mounted then we
@@ -174,13 +164,13 @@ class LVMSourceMixIn():
             self.run_command(command, self.source_hostname)
             snapshot['mounted'] = True
 
-    def _umount_snapshots(self, error_case=None):
+    def _umount_snapshots(self, error_case: Optional[bool] = None) -> None:
         """Umounts mounted snapshots in self._lv_snapshots.
 
         Args:
-            error_case: bool or None, whether an error has occurred during the
-                backup. Default is None. This method does not use this arg but
-                must accept it as part of the post hook API.
+            error_case: whether an error has occurred during the backup. This
+                method does not use this arg but must accept it as part of the
+                post hook API.
         """
         # TODO(jpwoodbu) If the user doesn't put '/' in their _includes, then
         # we'll end up with directories around where the snapshots are mounted
@@ -213,12 +203,11 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _prefix_mount_point_to_paths(self, paths):
+    def _prefix_mount_point_to_paths(self, paths: Iterable[str]) -> list[str]:
         """Prefixes the snapshot_mount_point_base_path to each path in paths.
 
         Args:
-            paths: list, list of strings representing paths for the backup
-                config.
+            paths: strings representing paths for the backup config.
 
         Returns:
           List of strings with the given paths prefixed with the base path
@@ -232,7 +221,7 @@ class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
             new_paths.append(new_path)
         return new_paths
 
-    def _run_custom_workflow(self):
+    def _run_custom_workflow(self) -> None:
         """Run backup of LVM snapshots.
 
         This method overrides the base class's _run_custom_workflow() so that

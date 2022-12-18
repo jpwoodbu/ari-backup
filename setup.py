@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(
     name='ari-backup',
-    version='1.1.0',
+    version='2.0.0',
     license='BSD',
     packages=['ari_backup'],
     author='ari-backup team',

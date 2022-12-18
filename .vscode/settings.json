@@ -7,5 +7,8 @@
         "*_test.py"
     ],
     "python.testing.pytestEnabled": false,
-    "python.testing.unittestEnabled": true
+    "python.testing.unittestEnabled": true,
+    "python.formatting.autopep8Args": [
+        "--indent-size=4"
+    ],
 }

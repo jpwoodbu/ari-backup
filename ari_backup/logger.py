@@ -1,4 +1,6 @@
 """Logging configuration for ari_backup package."""
+from typing import Optional
+
 import logging
 import logging.handlers
 import os
@@ -12,13 +14,17 @@ class Logger(logging.Logger):
       ERROR and above go to stderr
       INFO and above go to syslog, unless debug is True then DEBUG and above
     """
-    def __init__(self, name, debug=False, stderr_logging=True):
+
+    def __init__(self,
+                 name: str,
+                 debug: Optional[bool] = False,
+                 stderr_logging: Optional[bool] = True):
         """Initilizes Logger.
 
         Args:
-            name: str, name passed to logging.Logger.
-            debug: bool, whether to enable debug logging. Defaults to False.
-            stderr_logging: bool, whether to log to stderr. Defaults to True.
+            name: name passed to logging.Logger.
+            debug: whether to enable debug logging.
+            stderr_logging: whether to log to stderr.
         """
         logging.Logger.__init__(self, name)
 

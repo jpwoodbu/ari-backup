@@ -8,7 +8,3 @@ import zfs
 RdiffBackup = rdiff_backup_wrapper.RdiffBackup
 RdiffLVMBackup = lvm.RdiffLVMBackup
 ZFSLVMBackup = zfs.ZFSLVMBackup
-
-# Continue to provide old names for backward compatiblity.
-ARIBackup = RdiffBackup
-LVMBackup = RdiffLVMBackup

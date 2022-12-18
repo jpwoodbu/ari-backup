@@ -1,4 +1,6 @@
 """rdiff-backup based backup workflows."""
+from typing import Optional
+
 import os
 import shlex
 
@@ -46,19 +48,20 @@ flags.DEFINE_string(
 class RdiffBackup(workflow.BaseWorkflow):
     """Workflow to backup machines using rdiff-backup."""
 
-    def __init__(self, label, source_hostname,
-                 remove_older_than_timespec=None, **kwargs):
+    def __init__(self,
+                 label: str,
+                 source_hostname: str,
+                 remove_older_than_timespec: Optional[str] = None, **kwargs):
         """Configure an RdiffBackup object.
 
         Args:
-            label: str, label for the backup job.
-            source_hostname: str, the name of the host with the source data to
+            label: label for the backup job.
+            source_hostname: the name of the host with the source data to
                 backup.
-            remove_older_than_timespec: str or None, the maximum age of a
-                backup recovery point (uses the same format as the
-                --remove-older-than argument for rdiff-backup). Defaults to
-                None which will use the value of the remove_older_than_timespec
-                flag.
+            remove_older_than_timespec: the maximum age of a backup recovery
+                point (uses the same format as the --remove-older-than argument
+                for rdiff-backup). Defaults to None which will use the value of
+                the remove_older_than_timespec flag.
         """
         super().__init__(label, **kwargs)
         self.source_hostname = source_hostname
@@ -75,8 +78,8 @@ class RdiffBackup(workflow.BaseWorkflow):
             self.remove_older_than_timespec = remove_older_than_timespec
 
         # Initialize include and exclude lists.
-        self._includes = list()
-        self._excludes = list()
+        self._includes: list[str] = list()
+        self._excludes: list[str] = list()
 
         self._check_required_flags()
         self._check_required_binaries()
@@ -84,46 +87,10 @@ class RdiffBackup(workflow.BaseWorkflow):
         if self.remove_older_than_timespec is not None:
             # Using a lambda for late evaluation in case the user overrides the
             # value of self.remove_older_than_timespec before calling run().
-            def return_timespec():
+            def return_timespec() -> dict[str, str]:
                 return {'timespec': self.remove_older_than_timespec}
 
             self.add_post_hook(self._remove_older_than, return_timespec)
-
-    # Provide backward compatibility for config files using attributes
-    # directly.
-    @property
-    def include_dir_list(self):
-        self.logger.warning(
-            'include_dir_list is deprecated. Please use include() instead.')
-        return self._includes
-
-    @include_dir_list.setter
-    def include_dir_list(self, value):
-        self.logger.warning(
-            'include_dir_list is deprecated. Please use include() instead.')
-        self._includes = value
-
-    @property
-    def exclude_dir_list(self):
-        self.logger.warning(
-            'exclude_dir_list is deprecated. Please use exclude() instead.')
-        return self._excludes
-
-    @exclude_dir_list.setter
-    def exclude_dir_list(self, value):
-        self.logger.warning(
-            'exclude_dir_list is deprecated. Please use exclude() instead.')
-        self._excludes = value
-
-    def include_dir(self, path):
-        self.logger.warning(
-            'include_dir() is deprecated. Please use include() instead.')
-        self.include(path)
-
-    def exclude_dir(self, path):
-        self.logger.warning(
-            'exclude_dir() is deprecated. Please use exclude() instead.')
-        self.exclude(path)
 
     def _check_required_flags(self):
         if self.backup_store_path is None:
@@ -134,23 +101,23 @@ class RdiffBackup(workflow.BaseWorkflow):
             raise Exception('rdiff-backup does not appear to be installed or '
                             'is not executable.')
 
-    def include(self, path):
+    def include(self, path: str) -> None:
         """Add a path to be included in the backup.
 
         Args:
-            path: str, path to include in the backup.
+            path: path to include in the backup.
         """
         self._includes.append(path)
 
-    def exclude(self, path):
+    def exclude(self, path: str) -> None:
         """Add a path to be excluded from the backup.
 
         Args:
-            path: str, path to exclude from the backup.
+            path: path to exclude from the backup.
         """
         self._excludes.append(path)
 
-    def _run_custom_workflow(self):
+    def _run_custom_workflow(self) -> None:
         """Run rdiff-backup job.
 
         Builds an argument list for a full rdiff-backup command line based on
@@ -204,7 +171,7 @@ class RdiffBackup(workflow.BaseWorkflow):
         self.run_command(args)
         self.logger.debug('_run_backup completed.')
 
-    def _remove_older_than(self, timespec, error_case):
+    def _remove_older_than(self, timespec: str, error_case: bool):
         """Trims increments older than timespec.
 
         Post-job hook that uses rdiff-backup's --remove-older-than feature to
@@ -212,10 +179,10 @@ class RdiffBackup(workflow.BaseWorkflow):
         when error_case is True.
 
         Args:
-            timespec: str, the maximum age of a backup datapoint (uses the same
+            timespec: the maximum age of a backup datapoint (uses the same
                 format as the --remove-older-than argument for rdiff-backup
                 [e.g. 30D, 10W, 6M]).
-            error_case: bool, whether an error has occurred during the backup.
+            error_case: whether an error has occurred during the backup.
         """
         if not error_case:
             self.logger.info('remove_older_than %s started.' % timespec)
