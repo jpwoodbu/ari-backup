@@ -1,6 +1,4 @@
 """Logging configuration for ari_backup package."""
-from typing import Optional
-
 import logging
 import logging.handlers
 import os
@@ -17,8 +15,8 @@ class Logger(logging.Logger):
 
     def __init__(self,
                  name: str,
-                 debug: Optional[bool] = False,
-                 stderr_logging: Optional[bool] = True):
+                 debug: bool = False,
+                 stderr_logging: bool = True):
         """Initilizes Logger.
 
         Args:
