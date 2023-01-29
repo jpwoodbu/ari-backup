@@ -443,8 +443,3 @@ class BaseWorkflow:
                 return False
             else:
                 return True
-
-    def run_backup(self):
-        self.logger.warning('run_backup() is deprecated. '
-                            'Please use run() instead.')
-        self.run()
