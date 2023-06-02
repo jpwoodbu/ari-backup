@@ -108,6 +108,9 @@ class BaseWorkflow:
         self._settings_path = settings_path
         # Override default flag values from user provided settings file.
         self._load_settings()
+        # Since we're not using app.run(), flags like --help won't work unless
+        # we explicitly call define_help_flags() before parsing flags.
+        app.define_help_flags()
         # Initialize FLAGS. Normally this is done by the main() function but in
         # the model where the config files are excutable it seems the best
         # place to do this is here in the BaseWorkflow constructor.
