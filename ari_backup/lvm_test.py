@@ -5,9 +5,9 @@ from unittest import mock
 from absl import flags
 from absl.testing import flagsaver
 
-import lvm
-import test_lib
-import workflow
+from ari_backup import lvm
+from ari_backup import test_lib
+from ari_backup import workflow
 
 
 FLAGS = flags.FLAGS

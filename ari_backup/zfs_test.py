@@ -6,8 +6,8 @@ from unittest import mock
 from absl import flags
 from absl.testing import flagsaver
 
-import test_lib
-import zfs
+from ari_backup import test_lib
+from ari_backup import zfs
 
 
 FLAGS = flags.FLAGS

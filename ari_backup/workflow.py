@@ -20,7 +20,7 @@ import yaml
 
 from absl import flags
 
-from logger import Logger
+from ari_backup.logger import Logger
 
 
 SETTINGS_PATH = '/etc/ari-backup/ari-backup.conf.yaml'

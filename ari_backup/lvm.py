@@ -6,7 +6,7 @@ import os
 
 from absl import flags
 
-import rdiff_backup_wrapper
+from ari_backup import rdiff_backup_wrapper
 
 
 FLAGS = flags.FLAGS

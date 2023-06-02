@@ -5,8 +5,8 @@ from unittest import mock
 from absl import flags
 from absl.testing import flagsaver
 
-import rdiff_backup_wrapper
-import test_lib
+from ari_backup import rdiff_backup_wrapper
+from ari_backup import test_lib
 
 
 FLAGS = flags.FLAGS

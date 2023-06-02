@@ -6,8 +6,8 @@ from unittest import mock
 from absl import flags
 from absl.testing import flagsaver
 
-import workflow
-import test_lib
+from ari_backup import workflow
+from ari_backup import test_lib
 
 
 FLAGS = flags.FLAGS
