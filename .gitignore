@@ -4,3 +4,6 @@
 .venv
 ari_backup.egg-info
 Vagrantfile
+
+# Ignore Bazel symlink
+bazel-*
