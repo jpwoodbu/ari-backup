@@ -1,5 +1,6 @@
 *.pyc
 .eggs
+.*.swp
 .vagrant
 .venv
 ari_backup.egg-info
