@@ -54,7 +54,7 @@ your Linux distribution.
 
 To install the `ari_backup` package to your system, run this as `root`:
 ```
-pip install git+git://github.com/jpwoodbu/ari-backup.git
+pip install git+https://github.com/jpwoodbu/ari-backup.git
 ```
 
 Before you can execute a backup job, there are a few files and directories that
