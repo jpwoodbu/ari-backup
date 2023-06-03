@@ -1,7 +1,7 @@
 """Initialize the ari_backup package."""
-import lvm
-import rdiff_backup_wrapper
-import zfs
+from ari_backup import lvm
+from ari_backup import rdiff_backup_wrapper
+from ari_backup import zfs
 
 
 # Put the main backup classes in this namespace for convenience.
