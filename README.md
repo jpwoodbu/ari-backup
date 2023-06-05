@@ -4,8 +4,8 @@ repo, but it should be considered the canonical repo for ari-backup.
 ARI open-sourced the original codebase long ago and went out of business soon
 thereafter. There will not likely be any further development on this project
 under the [AmericanResearchInstitute organization](https://github.com/AmericanResearchInstitute)
-but development on ari-backup within this repo is still active and ongoing.
-For more ari-backup history, see the last section in this README.
+but development on ari-backup within this repo is somewhat active.  For more
+ari-backup history, see the last section in this README.
 
 # ari-backup
 
@@ -21,9 +21,9 @@ datasets using rsync. Features include:
 * Logging to syslog
 
 ari-backup was originally written to automate rdiff-backup jobs. That's been
-its main focus; but overtime it became interesting to add support for other
-backup types. The architecture of the workflow engine is designed to be easily
-extended so that adding new backup types can be done easily.
+its main focus; but over time it became interesting to add support for other
+backup types. The architecture of the workflow engine is designed to be extended
+so that adding new backup types can be done easily.
 
 This application is lightweight thanks mostly to leveraging common system
 tools to provide most of the facility necessary to run a backup system.
@@ -53,15 +53,15 @@ your Linux distribution.
 * [rdiff-backup](http://www.nongnu.org/rdiff-backup/)
 
 To install the `ari_backup` package to your system, run this as `root`:
-```
-pip install git+https://github.com/jpwoodbu/ari-backup.git
+```sh
+$ pip install git+https://github.com/jpwoodbu/ari-backup.git
 ```
 
 Before you can execute a backup job, there are a few files and directories that
 need to be set up. At this time, the configuration file for ari-backup is always
-read from `/etc/ari-backup/ari-backup.conf.yaml`. For this demo put this into
+read from `/etc/ari-backup/ari-backup.conf.yaml`. For this demo, put this into
 the `ari-backup.conf.yaml` file:
-```
+```yaml
 backup_store_path: /backup-store
 ```
 Now create the `/backup-store` directory.
@@ -69,8 +69,8 @@ Now create the `/backup-store` directory.
 Our demo will use the most basic example of a backup job. Our backup job will
 backup our `/music` directory to `/backup-store/my_backup`. Put the following
 into a file named `ari-backup-local-demo`:
-```
-#!/usr/bin/env python
+```python
+#!/usr/bin/env python3
 import ari_backup
 
 backup = ari_backup.RdiffBackup(label='my_backup', source_hostname='localhost')
@@ -81,11 +81,11 @@ backup.run()
 Make sure you're logged in as a user with permission to read the
 `/etc/ari-backup/ari-backup.conf.yaml` file. Make `ari-backup-local-demo`
 executable and run it with some debug flags.
-```
+```sh
 $ ./ari-backup-local-demo --debug --dry_run
 ```
-The ouputput should look something like this:
-```
+The output should look something like this:
+```log
 ari_backup (my_backup) [INFO] workflow.py:392 Running in dry_run mode.
 ari_backup (my_backup) [INFO] workflow.py:393 started                          
 ari_backup (my_backup) [INFO] workflow.py:254 processing pre-job hooks...      
@@ -99,7 +99,7 @@ ari_backup (my_backup) [INFO] workflow.py:411 stopped
 ```
 You'll notice similar output in your syslog as all ari_backup are logged there
 too. For all the available flags to ari_backup job files use the --help flag.
-```
+```sh
 $ ./ari-backup-local-demo --help
 ```
 
@@ -135,21 +135,21 @@ installed, the only other step is to install rdiff-backup. ari-backup does not
 need to be installed on the remote system. Isn't that great!
 
 Make sure that the user that's running your backup script has the remote host's
-host key in its known_hosts file. The best way to ensure that it is, is to test
-your public key authentication works by logging in to the remote system
+host key in its `known_hosts` file. The best way to ensure that it is, is to
+test your public key authentication works by logging in to the remote system
 manually.
 
 We'll need to add the remote_user setting to our
 `/etc/ari-backup/ari-backup.conf.yaml` file. It should now look like:
-```
+```yaml
 backup_store_path: /backup-store
 remote_user: backups
 ```
 
 Let's assume that your remote host is named kif. Make a new backup job file
 named `ari-backup-remote-demo` with this content:
-```
-#!/usr/bin/env python
+```python
+#!/usr/bin/env python3
 import ari_backup
 
 backup = ari_backup.RdiffBackup(label='kif_backup', source_hostname='kif')
@@ -159,7 +159,7 @@ backup.run()
 
 Make `ari-backup-remote-demo` executable and run it first with the debug
 flags to see what it will be doing.
-```
+```sh
 $ ./ari-backup-remote-demo --debug --dry_run
 ```
 If everything looks good, run it without any flags. Again, no output to the
@@ -171,35 +171,34 @@ you put in the source_hostname parameter.
 ## Settings and flags
 
 Once you've got a workable backup script, you can use it to see what command
-line flags are available. Using the <i>ari-backup-local-demo</i> we made
-before, run this command line:
-```
-$ ./ari-backup-local-demo --help
+line flags are available. Using the *ari-backup-local-demo* we made before, run
+this command line:
+```sh
+$ ./ari-backup-local-demo --helpfull
 ```
 That will display a list of all available flags, a description for each, their
-default value, and in which module they're defined. See
-[python-gflags](https://code.google.com/p/python-gflags/) for more on how to
-use flags.
+default value, and in which module they're defined. See [absl-py
+flags](https://abseil.io/docs/python/guides/flags) for more on how to use flags.
 
 The default flags values can be overridden by entries in the
 `/etc/ari-backup/ari-backup.conf.yaml` config file, on the command line at
 runtime, or by assigning new flag values to the backup object before run() is
-called. By convention, flags are assigned as public atttributes of backup
+called. By convention, flags are assigned as public attributes of backup
 objects.
 
 If, for example, you wanted to override the value of the `remote_user` flag
 defined in the `ari_backup.workflow module`, you could define `remote_user` in
 the `/etc/ari-backup/ari-backup.conf.yaml` config like so:
-```
+```yaml
 remote_user: backup_user
 ```
 You can also override it on the command line:
-```
+```sh
 $ ./my_backup_script --remote_user backup_user
 ```
 Finally, you can override it within the backup config file:
-```
-!/usr/bin/env python
+```python
+!/usr/bin/env python3
 import ari_backup
 backup = ari_backup.RdiffBackup(label='mybackup', source_hostname='localhost')
 backup.include('/home')
@@ -227,7 +226,7 @@ also notice that when running our cron script you will actually get some
 console output as it reports how long the entire selection of jobs took to
 run. You may see something like
 this:
-```
+```sh
 real    3m44.318s
 user    0m45.595s
 sys     0m8.253s
@@ -252,7 +251,7 @@ Let's add LVM into the mix so that we can achieve crash-consistent backups.
 This is done using the lvm module.  We'll need to add the
 `snapshot_mount_root` and `snapshot_suffix` settings to our existing
 `/etc/ari-backup/ari-backup.conf.yaml` file:
-```
+```yaml
 snapshot_mount_root: /tmp
 snapshot_suffix: -ari-backup
 ```
@@ -269,8 +268,8 @@ mountpoints on the remote system (you may add more than one LVM volume by
 adding multiple `backup.add_volume()` statements). Finally, specify the
 directories to be backed up with `backup.include()`.  Make a new backup job
 file named `ari-backup-remote-lvm-demo` with this content:
-```
-#!/usr/bin/env python
+```python
+#!/usr/bin/env python3
 import ari_backup
 
 backup = ari_backup.RdiffLVMBackup(
@@ -296,7 +295,7 @@ Mounting a shapshot of an already mounted XFS file system will likely result in
 an error. See [issue #24](https://github.com/jpwoodbu/ari-backup/issues/24). To
 work around this, you should pass the `nouuid` mount option.
 
-### zfs
+### ZFS
 
 The zfs module provides a way to backup hosts to a machine which uses
 [ZFS](http://en.wikipedia.org/wiki/ZFS) for its backup-store. Rather than use
@@ -309,8 +308,8 @@ LVM snapshots on the source host before running the backup. Currently, that is
 the only use case supported by the zfs module.
 
 An example config using the zfs module:
-```
-#!/usr/bin/env python
+```python
+#!/usr/bin/env python3
 import ari_backup
 
 backup = ari_backup.ZFSLVMBackup(
@@ -343,8 +342,8 @@ commands locally or remotely before or after the backup is run.
 
 Let's say, for example, you want to dump a database to disk before your backup.
 We can expand on our previous example using the lvm module.
-```
-#!/usr/bin/env python
+```python
+#!/usr/bin/env python3
 import ari_backup
 
 backup = ari_backup.RdiffLVMBackup(
@@ -367,7 +366,7 @@ to a particular path. That's a shell feature; but that's OK because the command
 will be run through a shell on the remote host via SSH. When running commands
 locally, if you require the command to be run through shell, you **must**
 pass the command argument to `run_command` as a string.
-```
+```python
 # This snippet will be run locally in a shell and will successfully create a
 # /tmp/delme file with 'test' inside.
 backup.run_command('echo test > /tmp/delme', host='localhost')
@@ -394,6 +393,19 @@ argument or leave out the host argument entirely.
 
 ## Development
 
+If you are interested in contributing to ari-backup, there are two
+paths to help you get started quickly: **Bazel** (preferred) and **Vagrant**.
+
+### Bazel
+
+This project includes a `.bazelversion` file so it's recommend to install Bazel
+with [Bazelisk](https://github.com/bazelbuild/bazelisk) to ensure a compatible
+version of Bazel is being used. Once Bazelisk is installed, you can build and
+test `ari-backup` with `bazelisk test ...` from the top of the repo. Bazel will
+take care of brining in all the needed dependencies into sandboxes without
+cluttering up your system.
+
+### Vagrant (legacy)
 If you are interested in contributing to ari-backup, there is a
 Vagrantfile.example to help you get started quickly. All you need is a Linux
 host that supports libvirt, Ansible, and the vagrant-sshfs plugin.
@@ -403,7 +415,7 @@ configures a guest virtual machine with an ari-backup development setup. Here
 are example commands for a Fedora host machine (you can season to taste for
 other distributions by installing their equivalent packages instead):
 
-```
+```sh
 $ sudo dnf install ansible vagrant-libvirt vagrant-sshfs
 $ git clone git@github.com:jpwoodbu/ari-backup.git
 $ cd ari-backup
@@ -423,7 +435,6 @@ Vagrant guests are meant to be throwaway machines (since the state of your code
 is still kept on the host) so if you ever get into trouble in the guest, simply
 run ```vagrant destroy``` (on the host) to get rid of it and you can quickly
 start over.
-
 
 ## History and Namesake
 
