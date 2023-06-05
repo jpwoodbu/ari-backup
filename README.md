@@ -198,7 +198,7 @@ $ ./my_backup_script --remote_user backup_user
 ```
 Finally, you can override it within the backup config file:
 ```python
-!/usr/bin/env python3
+#!/usr/bin/env python3
 import ari_backup
 backup = ari_backup.RdiffBackup(label='mybackup', source_hostname='localhost')
 backup.include('/home')
@@ -287,7 +287,7 @@ When using LVM snapshots, you can provide specific mount options for ari-backup
 to use when mounting the snapshots. This is done as an optional string argument
 to the `add_volume` method. The string should use the same form for mount
 options you would use in fstab. Expanding on the above example:
-```
+```python
 backup.add_volume('vg0/root', '/', mount_options='noatime,nodiratime')
 ```
 #### Known issue with XFS
@@ -402,7 +402,7 @@ This project includes a `.bazelversion` file so it's recommend to install Bazel
 with [Bazelisk](https://github.com/bazelbuild/bazelisk) to ensure a compatible
 version of Bazel is being used. Once Bazelisk is installed, you can build and
 test `ari-backup` with `bazelisk test ...` from the top of the repo. Bazel will
-take care of brining in all the needed dependencies into sandboxes without
+take care of bringing in all the needed dependencies into sandboxes without
 cluttering up your system.
 
 ### Vagrant (legacy)
