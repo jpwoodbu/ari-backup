@@ -1,8 +1,8 @@
 import os
-import unittest
 from unittest import mock
 
 from absl import flags
+from absl.testing import absltest
 from absl.testing import flagsaver
 
 from ari_backup import rdiff_backup_wrapper
@@ -14,7 +14,7 @@ FLAGS = flags.FLAGS
 FLAGS.stderr_logging = False
 
 
-class RdiffBackupTest(unittest.TestCase):
+class RdiffBackupTest(absltest.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -290,7 +290,7 @@ class RdiffBackupTest(unittest.TestCase):
             False)
 
 
-class ZRdiffBackupCheckRequiredBinariesTest(unittest.TestCase):
+class ZRdiffBackupCheckRequiredBinariesTest(absltest.TestCase):
     """Class for testing methods that were mocked out in RdiffBackupTest."""
 
     @flagsaver.flagsaver
@@ -306,4 +306,4 @@ class ZRdiffBackupCheckRequiredBinariesTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    absltest.main()

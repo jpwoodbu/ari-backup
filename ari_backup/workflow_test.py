@@ -1,9 +1,10 @@
 import subprocess
 import time
-import unittest
+# import unittest
 from unittest import mock
 
 from absl import flags
+from absl.testing import absltest
 from absl.testing import flagsaver
 
 from ari_backup import workflow
@@ -15,7 +16,7 @@ FLAGS = flags.FLAGS
 FLAGS.stderr_logging = False
 
 
-class CommandRunnerTest(unittest.TestCase):
+class CommandRunnerTest(absltest.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -78,7 +79,7 @@ class CommandRunnerTest(unittest.TestCase):
         self.assertEqual(return_code, 3)
 
 
-class BaseWorkflowTest(unittest.TestCase):
+class BaseWorkflowTest(absltest.TestCase):
 
     @flagsaver.flagsaver
     @mock.patch.object(workflow.BaseWorkflow, '_get_settings_from_file')
@@ -441,4 +442,4 @@ class BaseWorkflowTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    absltest.main()

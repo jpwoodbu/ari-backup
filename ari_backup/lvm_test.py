@@ -1,8 +1,8 @@
 import os
-import unittest
 from unittest import mock
 
 from absl import flags
+from absl.testing import absltest
 from absl.testing import flagsaver
 
 from ari_backup import lvm
@@ -33,7 +33,7 @@ class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
         pass
 
 
-class LVMSourceMixInTest(unittest.TestCase):
+class LVMSourceMixInTest(absltest.TestCase):
 
     @mock.patch.object(FakeBackup, '_run_custom_workflow')
     @mock.patch.object(lvm.LVMSourceMixIn, '_delete_snapshots')
@@ -112,7 +112,7 @@ class LVMSourceMixInTest(unittest.TestCase):
             any_order=True)
 
     @flagsaver.flagsaver
-    @unittest.skipUnless(os.name == 'posix',
+    @absltest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testCreateSnapshots_multipleSnapshots_addsSnapshotsToTracker(self):
         FLAGS.snapshot_mount_root = '/fake_root'
@@ -183,7 +183,7 @@ class LVMSourceMixInTest(unittest.TestCase):
         self.assertFalse(backup._lv_snapshots[1]['created'])
 
     @flagsaver.flagsaver
-    @unittest.skipUnless(os.name == 'posix',
+    @absltest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testMountSnapshots_multipleSnapshots_makesMountPointDirectories(self):
         FLAGS.snapshot_mount_root = '/fake_root'
@@ -232,7 +232,7 @@ class LVMSourceMixInTest(unittest.TestCase):
         self.assertFalse(backup.run())
 
     @flagsaver.flagsaver
-    @unittest.skipUnless(os.name == 'posix',
+    @absltest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testMountSnapshots_withMountOptions_mountsWithMountOptions(self):
         FLAGS.snapshot_mount_root = '/fake_root'
@@ -261,7 +261,7 @@ class LVMSourceMixInTest(unittest.TestCase):
             [expected_call_fakevolume1, expected_call_fakevolume2])
 
     @flagsaver.flagsaver
-    @unittest.skipUnless(os.name == 'posix',
+    @absltest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testMountSnapshots_withoutMountOptions_mountsWithoutMountOptions(self):
         FLAGS.snapshot_mount_root = '/fake_root'
@@ -300,7 +300,7 @@ class LVMSourceMixInTest(unittest.TestCase):
         self.assertTrue(backup._lv_snapshots[1]['mounted'])
 
     @flagsaver.flagsaver
-    @unittest.skipUnless(os.name == 'posix',
+    @absltest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testUnmountSnapshots_snapshotsMounted_snapshotsUnmounted(self):
         FLAGS.snapshot_suffix = '-fake_backup'
@@ -325,7 +325,7 @@ class LVMSourceMixInTest(unittest.TestCase):
             [expected_call_fakevolume2, expected_call_fakevolume1])
 
     @flagsaver.flagsaver
-    @unittest.skipUnless(os.name == 'posix',
+    @absltest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testUnmountSnapshots_mountPointsCreated_mountPointsRemoved(self):
         FLAGS.snapshot_suffix = '-fake_backup'
@@ -352,7 +352,7 @@ class LVMSourceMixInTest(unittest.TestCase):
             [expected_call_fakevolume2, expected_call_fakevolume1])
 
 
-class RdiffLVMBackupTest(unittest.TestCase):
+class RdiffLVMBackupTest(absltest.TestCase):
 
     def setUp(self):
         super().setUp()
@@ -408,4 +408,4 @@ class RdiffLVMBackupTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    absltest.main()

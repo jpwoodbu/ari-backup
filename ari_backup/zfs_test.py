@@ -1,9 +1,9 @@
 import datetime
 import os
-import unittest
 from unittest import mock
 
 from absl import flags
+from absl.testing import absltest
 from absl.testing import flagsaver
 
 from ari_backup import test_lib
@@ -15,7 +15,7 @@ FLAGS = flags.FLAGS
 FLAGS.stderr_logging = False
 
 
-class ZFSLVMBackupTest(unittest.TestCase):
+class ZFSLVMBackupTest(absltest.TestCase):
 
     @mock.patch.object(zfs.ZFSLVMBackup, '_destroy_expired_zfs_snapshots')
     @mock.patch.object(zfs.ZFSLVMBackup, '_create_zfs_snapshot')
@@ -58,7 +58,7 @@ class ZFSLVMBackupTest(unittest.TestCase):
         test_lib.AssertCallsInOrder(manager_mock, expected_calls)
 
     @flagsaver.flagsaver
-    @unittest.skipUnless(os.name == 'posix',
+    @absltest.skipUnless(os.name == 'posix',
                          'test expects posix path separator')
     def testRunCustomWorkflow(self):
         FLAGS.rsync_path = '/fake/rsync'
@@ -332,4 +332,4 @@ class ZFSLVMBackupTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    absltest.main()
