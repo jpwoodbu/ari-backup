@@ -90,7 +90,7 @@ class BaseWorkflow:
 
     def __init__(self,
                  label: str,
-                 settings_path: str = SETTINGS_PATH,
+                 settings_path: Optional[str] = SETTINGS_PATH,
                  command_runner: Optional[CommandRunner] = None,
                  argv: list[str] = sys.argv):
         """Configure a workflow object.
@@ -297,7 +297,7 @@ class BaseWorkflow:
 
     def run_command(
             self,
-            command: Union[str, list],
+            command: Optional[Union[str, list]],
             host: str = 'localhost') -> tuple[str, str]:
         """Runs an arbitrary command on a given host.
 
