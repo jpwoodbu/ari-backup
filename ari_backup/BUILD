@@ -16,13 +16,13 @@ py_library(
 
 py_test(
     name = "workflow_test",
+    size = "small",
     srcs = ["workflow_test.py"],
     deps = [
-        ":workflow",
         ":test_lib",
+        ":workflow",
         "@requirements_absl_py//:pkg",
     ],
-    size = "small",
 )
 
 py_library(
@@ -36,13 +36,13 @@ py_library(
 
 py_test(
     name = "rdiff_backup_wrapper_test",
+    size = "small",
     srcs = ["rdiff_backup_wrapper_test.py"],
     deps = [
         ":rdiff_backup_wrapper",
         ":test_lib",
         "@requirements_absl_py//:pkg",
     ],
-    size = "small",
 )
 
 py_library(
@@ -56,6 +56,7 @@ py_library(
 
 py_test(
     name = "lvm_test",
+    size = "small",
     srcs = ["lvm_test.py"],
     deps = [
         ":lvm",
@@ -63,7 +64,6 @@ py_test(
         ":workflow",
         "@requirements_absl_py//:pkg",
     ],
-    size = "small",
 )
 
 py_library(
@@ -78,13 +78,13 @@ py_library(
 
 py_test(
     name = "zfs_test",
+    size = "small",
     srcs = ["zfs_test.py"],
     deps = [
-        ":zfs",
         ":test_lib",
+        ":zfs",
         "@requirements_absl_py//:pkg",
     ],
-    size = "small",
 )
 
 py_library(

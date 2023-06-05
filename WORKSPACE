@@ -9,8 +9,11 @@ http_archive(
     url = "https://github.com/bazelbuild/rules_python/releases/download/0.22.0/rules_python-0.22.0.tar.gz",
 )
 
-load("@rules_python//python:repositories.bzl",
-    "py_repositories", "python_register_toolchains")
+load(
+    "@rules_python//python:repositories.bzl",
+    "py_repositories",
+    "python_register_toolchains",
+)
 
 py_repositories()
 
@@ -20,32 +23,32 @@ python_register_toolchains(
 )
 
 load("@python3_11//:defs.bzl", "interpreter")
-
 load("@rules_python//python:pip.bzl", "pip_parse")
 
 # Create a central repo that knows about the dependencies needed from
 # requirements_lock.txt.
 pip_parse(
-   name = "requirements",
-   requirements_lock = "//ari_backup:requirements_lock.txt",
-   python_interpreter_target = interpreter,
+    name = "requirements",
+    python_interpreter_target = interpreter,
+    requirements_lock = "//ari_backup:requirements_lock.txt",
 )
 
 # Load the starlark macro which will define your dependencies.
 load("@requirements//:requirements.bzl", "install_deps")
+
 # Call it to define repos for your requirements.
 install_deps()
-
 
 # Create a central repo that knows about the dependencies needed from
 # test_requirements_lock.txt.
 pip_parse(
-   name = "test_requirements",
-   requirements_lock = "//ari_backup:test_requirements_lock.txt",
-   python_interpreter_target = interpreter,
+    name = "test_requirements",
+    python_interpreter_target = interpreter,
+    requirements_lock = "//ari_backup:test_requirements_lock.txt",
 )
 
 # Load the starlark macro which will define your dependencies.
-load("@test_requirements//:requirements.bzl", install_test_deps="install_deps")
+load("@test_requirements//:requirements.bzl", install_test_deps = "install_deps")
+
 # Call it to define repos for your requirements.
 install_test_deps()

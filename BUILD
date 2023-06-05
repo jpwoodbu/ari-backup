@@ -7,14 +7,15 @@ filegroup(
 
 py_test(
     name = "style_test",
+    size = "small",
     srcs = ["style_test.py"],
     args = [
-      '$(locations :src_files)',
-      '$(locations //ari_backup:src_files)'],
-    deps = ["@test_requirements_flake8//:pkg"],
-    data = [
-      ":src_files",
-      "//ari_backup:src_files",
+        "$(locations :src_files)",
+        "$(locations //ari_backup:src_files)",
     ],
-    size = "small",
+    data = [
+        ":src_files",
+        "//ari_backup:src_files",
+    ],
+    deps = ["@test_requirements_flake8//:pkg"],
 )
