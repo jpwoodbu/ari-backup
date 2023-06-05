@@ -16,5 +16,5 @@ py_test(
       ":src_files",
       "//ari_backup:src_files",
     ],
-    timeout = "short",
+    size = "small",
 )

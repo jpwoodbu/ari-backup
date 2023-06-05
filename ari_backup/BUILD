@@ -22,6 +22,7 @@ py_test(
         ":test_lib",
         "@requirements_absl_py//:pkg",
     ],
+    size = "small",
 )
 
 py_library(
@@ -41,6 +42,7 @@ py_test(
         ":test_lib",
         "@requirements_absl_py//:pkg",
     ],
+    size = "small",
 )
 
 py_library(
@@ -61,6 +63,7 @@ py_test(
         ":workflow",
         "@requirements_absl_py//:pkg",
     ],
+    size = "small",
 )
 
 py_library(
@@ -81,6 +84,7 @@ py_test(
         ":test_lib",
         "@requirements_absl_py//:pkg",
     ],
+    size = "small",
 )
 
 py_library(
