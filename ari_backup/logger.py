@@ -25,6 +25,8 @@ class Logger(logging.Logger):
             stderr_logging: whether to log to stderr.
         """
         logging.Logger.__init__(self, name)
+        self.stderr_handler = None
+        self.syslog_handler = None
 
         # Set the name, much like logging.getLogger(name) would.
         if debug:
@@ -36,22 +38,28 @@ class Logger(logging.Logger):
 
         # Emit to sys.stderr, ERROR and above, unless debug is True.
         if stderr_logging:
-            stream_handler = logging.StreamHandler(sys.stderr)
+            self.stderr_handler = logging.StreamHandler(sys.stderr)
             if debug:
-                stream_handler.setLevel(logging.DEBUG)
+                self.stderr_handler.setLevel(logging.DEBUG)
             else:
-                stream_handler.setLevel(logging.ERROR)
-            stream_handler.setFormatter(formatter)
-            self.addHandler(stream_handler)
+                self.stderr_handler.setLevel(logging.ERROR)
+            self.stderr_handler.setFormatter(formatter)
+            self.addHandler(self.stderr_handler)
 
         # On some systems (e.g. docker containers) /dev/log might not be
         # available.
         if os.access('/dev/log', os.W_OK):
             # Emit to syslog, INFO and above, or DEBUG if debug.
-            syslog_handler = logging.handlers.SysLogHandler('/dev/log')
+            self.syslog_handler = logging.handlers.SysLogHandler('/dev/log')
             if debug:
-                syslog_handler.setLevel(logging.DEBUG)
+                self.syslog_handler.setLevel(logging.DEBUG)
             else:
-                syslog_handler.setLevel(logging.INFO)
-            syslog_handler.setFormatter(formatter)
-            self.addHandler(syslog_handler)
+                self.syslog_handler.setLevel(logging.INFO)
+            self.syslog_handler.setFormatter(formatter)
+            self.addHandler(self.syslog_handler)
+
+    def __del__(self):
+        if self.stderr_handler:
+            self.stderr_handler.close()
+        if self.syslog_handler:
+            self.syslog_handler.close()
