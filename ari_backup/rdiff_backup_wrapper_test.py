@@ -290,7 +290,7 @@ class RdiffBackupTest(absltest.TestCase):
             False)
 
 
-class ZRdiffBackupCheckRequiredBinariesTest(absltest.TestCase):
+class RdiffBackupCheckRequiredBinariesTest(absltest.TestCase):
     """Class for testing methods that were mocked out in RdiffBackupTest."""
 
     @flagsaver.flagsaver
