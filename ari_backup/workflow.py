@@ -102,9 +102,10 @@ class BaseWorkflow:
             command_runner: an instantiated object that provides the
                 CommandRunner interface or None. If None, the CommandRunner
                 class will be used by default.
-            argv: used for testing. When a test runner is used, there are many
-                flags passed into the interpreter which are invalid according
-                to absl flags.
+            argv: Passed to FLAGS for flags parsing. By default, it's set to
+                sys.argv, but can be overridden for testing. When a test runner
+                is used, there are many flags passed into the interpreter which
+                are invalid according to absl flags.
         """
         self._settings_path = settings_path
         # Override default flag values from user provided settings file.
