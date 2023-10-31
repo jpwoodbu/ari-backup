@@ -29,9 +29,6 @@ class FakeBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
         super().__init__(argv=['fake_program'], *args, **kwargs)
         self.source_hostname = source_hostname
 
-    def _run_custom_workflow(self) -> None:
-        pass
-
 
 class LVMSourceMixInTest(absltest.TestCase):
 
@@ -70,6 +67,15 @@ class LVMSourceMixInTest(absltest.TestCase):
         backup.run()
 
         test_lib.AssertCallsInOrder(manager_mock, expected_calls)
+
+    def testWorkflow_noVolumesAdded_raises(self):
+        backup = FakeBackup(source_hostname='unused', label='fake_backup',
+                            settings_path=None)
+        backup._logical_volumes = []
+
+        with self.assertRaises(ValueError):
+            # Calling run() doesn't work well since it catches all exceptions.
+            backup._run_custom_workflow()
 
     def testAddVolume_noMountOptions_addsVolumeWithNoneAsMountOptions(self):
         backup = FakeBackup(source_hostname='unused', label='fake_backup',

@@ -199,6 +199,13 @@ class LVMSourceMixIn():
                 self.run_command_with_retries(command, self.source_hostname)
                 snapshot['mount_point_created'] = False
 
+    def _run_custom_workflow(self) -> None:
+        if len(self._logical_volumes) == 0:
+            raise ValueError(
+                'No volumes have been added using add_volume. '
+                'The backup cannot proceed.')
+        super()._run_custom_workflow()
+
 
 class RdiffLVMBackup(LVMSourceMixIn, rdiff_backup_wrapper.RdiffBackup):
     """Subclass to add LVM snapshot management to RdiffBackup."""
