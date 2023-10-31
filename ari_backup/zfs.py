@@ -23,7 +23,7 @@ flags.DEFINE_string(
 class ZFSLVMBackup(lvm.LVMSourceMixIn, workflow.BaseWorkflow):
     """Workflow for backing up a logical volume to a ZFS dataset.
 
-    Data is copied from and LVM snapshot to a ZFS dataset using rsync and then
+    Data is copied from an LVM snapshot to a ZFS dataset using rsync and then
     ZFS commands are issued to create historical snapshots. The ZFS snapshot
     lifecycle is also managed by this class. When a backup completes, snapshots
     older than snapshot_expiration_days are destroyed.
