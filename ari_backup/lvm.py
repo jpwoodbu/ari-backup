@@ -15,6 +15,10 @@ flags.DEFINE_string(
     'root path for creating temporary directories for mounting LVM snapshots')
 flags.DEFINE_string('snapshot_suffix', '-ari_backup',
                     'suffix for LVM snapshots')
+flags.DEFINE_string(
+    'snapshot_size', '1G',
+    'size of the snapshot (exception table). '
+    'This string is passed to the -L flag of lvcreate')
 
 
 _LogicalVolumes: TypeAlias = list[tuple[str, str, str]]
@@ -37,6 +41,7 @@ class LVMSourceMixIn():
         # workflow configs.
         self.snapshot_mount_root = FLAGS.snapshot_mount_root
         self.snapshot_suffix = FLAGS.snapshot_suffix
+        self.snapshot_size = FLAGS.snapshot_size
 
         # This is a list of 3-tuples, where each inner 3-tuple expresses the LV
         # to back up, the mount point for that LV, and any mount options
@@ -93,10 +98,8 @@ class LVMSourceMixIn():
                     snapshot_mp_bp=self._snapshot_mount_point_base_path,
                     src_mount_path=src_mount_path))
 
-            # TODO(jpwoodbu) Is it really OK to always make a 1GB exception
-            # table?
-            command = ['lvcreate', '-s', '-L', '1G', lv_path, '-n',
-                       new_lv_name]
+            command = ['lvcreate', '-s', '-L', self.snapshot_size, lv_path,
+                       '-n', new_lv_name]
             self.run_command(command, self.source_hostname)
 
             self._lv_snapshots.append({

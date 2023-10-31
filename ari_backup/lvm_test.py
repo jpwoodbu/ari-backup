@@ -88,6 +88,7 @@ class LVMSourceMixInTest(absltest.TestCase):
     @flagsaver.flagsaver
     def testCreateSnapshots_multipleSnapshots_createsSnapshots(self):
         FLAGS.snapshot_suffix = '-fake_backup'
+        FLAGS.snapshot_size = '2G'
         mock_command_runner = test_lib.GetMockCommandRunner()
         # Note that setting source_hostname to 'localhost' prevents the command
         # that is run from being prefixed with an ssh command.
@@ -95,11 +96,11 @@ class LVMSourceMixInTest(absltest.TestCase):
             source_hostname='localhost', label='unused', settings_path=None,
             command_runner=mock_command_runner)
         expected_call_fakevolume1 = mock.call(
-            ['lvcreate', '-s', '-L', '1G', 'fake_volume_group/fake_volume1',
+            ['lvcreate', '-s', '-L', '2G', 'fake_volume_group/fake_volume1',
              '-n', 'fake_volume1-fake_backup'],
             False)
         expected_call_fakevolume2 = mock.call(
-            ['lvcreate', '-s', '-L', '1G', 'fake_volume_group/fake_volume2',
+            ['lvcreate', '-s', '-L', '2G', 'fake_volume_group/fake_volume2',
              '-n', 'fake_volume2-fake_backup'],
             False)
 
