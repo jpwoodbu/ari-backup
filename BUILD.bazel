@@ -1,4 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_test")
+load("@pip_test//:requirements.bzl", "requirement")
 
 filegroup(
     name = "src_files",
@@ -17,5 +18,7 @@ py_test(
         ":src_files",
         "//ari_backup:src_files",
     ],
-    deps = ["@test_requirements_flake8//:pkg"],
+    deps = [
+        requirement("flake8"),
+    ],
 )
