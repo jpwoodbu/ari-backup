@@ -1,4 +1,5 @@
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@pip//:requirements.bzl", "requirement")
 
 py_library(
     name = "logger",
@@ -10,7 +11,7 @@ py_library(
     srcs = ["workflow.py"],
     deps = [
         ":logger",
-        "@requirements_pyyaml//:pkg",
+        requirement("pyyaml"),
     ],
 )
 
@@ -21,7 +22,7 @@ py_test(
     deps = [
         ":test_lib",
         ":workflow",
-        "@requirements_absl_py//:pkg",
+        requirement("absl_py"),
     ],
 )
 
@@ -30,7 +31,7 @@ py_library(
     srcs = ["rdiff_backup_wrapper.py"],
     deps = [
         ":workflow",
-        "@requirements_absl_py//:pkg",
+        requirement("absl_py"),
     ],
 )
 
@@ -41,7 +42,7 @@ py_test(
     deps = [
         ":rdiff_backup_wrapper",
         ":test_lib",
-        "@requirements_absl_py//:pkg",
+        requirement("absl_py"),
     ],
 )
 
@@ -50,7 +51,7 @@ py_library(
     srcs = ["lvm.py"],
     deps = [
         ":rdiff_backup_wrapper",
-        "@requirements_absl_py//:pkg",
+        requirement("absl_py"),
     ],
 )
 
@@ -62,7 +63,7 @@ py_test(
         ":lvm",
         ":test_lib",
         ":workflow",
-        "@requirements_absl_py//:pkg",
+        requirement("absl_py"),
     ],
 )
 
@@ -72,7 +73,7 @@ py_library(
     deps = [
         ":lvm",
         ":workflow",
-        "@requirements_absl_py//:pkg",
+        requirement("absl_py"),
     ],
 )
 
@@ -83,14 +84,16 @@ py_test(
     deps = [
         ":test_lib",
         ":zfs",
-        "@requirements_absl_py//:pkg",
+        requirement("absl_py"),
     ],
 )
 
 py_library(
     name = "test_lib",
     srcs = ["test_lib.py"],
-    deps = ["@requirements_absl_py//:pkg"],
+    deps = [
+        requirement("absl_py"),
+    ],
 )
 
 filegroup(
