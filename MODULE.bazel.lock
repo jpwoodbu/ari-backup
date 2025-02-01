@@ -243,7 +243,7 @@
     },
     "@@rules_python+//python/extensions:pip.bzl%pip": {
       "general": {
-        "bzlTransitiveDigest": "3NU4P1ZMJpwxeEqYgdIqThspiJugQB2YFURwe5Cq0cI=",
+        "bzlTransitiveDigest": "rf6l36dgC9+meab17f35zE8ytj0gdbXez7fMYxBStU4=",
         "usagesDigest": "AB4124nzqKP1Y6HnNhcbyAz9FqCladsEAg1w5vIRYOo=",
         "recordedFileInputs": {
           "@@//ari_backup/requirements_lock.txt": "0d54c8598855efd5b1f1c7c44a2fd5dd7a1bb8f659da7be78afda15dc6852803",
